@@ -1,4 +1,4 @@
- import java.awt.Dimension;
+import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -33,4 +33,5 @@ To-Do:
  - view orbit
  - rotation
  - relativistic effects
+ - body placement
 */

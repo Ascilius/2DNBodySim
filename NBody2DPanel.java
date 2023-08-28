@@ -34,6 +34,8 @@ public class NBody2DPanel extends JPanel {
 	private long totalFrames;
 	private double currentFPS;
 	private boolean clear = false;
+	// barycenter
+	private boolean barycenter = false;
 
 	// camera
 	private double cameraX = 0.0;
@@ -52,6 +54,7 @@ public class NBody2DPanel extends JPanel {
 	private boolean paused = true;
 	private boolean collisions = true;
 	private boolean tidalForces = true;
+	private double minMass = Math.pow(10, 28);
 	// multithreading
 	private int n = Runtime.getRuntime().availableProcessors() - 1;
 	private int num, rem;
@@ -63,15 +66,16 @@ public class NBody2DPanel extends JPanel {
 	// fast
 	private double timeScale = stepSize / targetFPS; // s
 
-	// entities
+	// bodies
 	private List<Body2D> bodies = Collections.synchronizedList(new ArrayList<Body2D>()); // does this actually work?
 	private int trailLen = 0; // -1 = infinite trail
 	private boolean relative = false;
 	private int scenario;
-	ArrayList<Body2D> sortedBodies;
-	String[] bodyStrings;
-	int[] bodyLengths;
-	Rectangle[] bodyBounds;
+	// body locator
+	private ArrayList<Body2D> sortedBodies;
+	private String[] bodyStrings;
+	private int[] bodyLengths;
+	private Rectangle[] bodyBounds;
 
 	public NBody2DPanel(double screenWidth, double screenHeight) {
 		// screen
@@ -145,35 +149,28 @@ public class NBody2DPanel extends JPanel {
 	}
 
 	// splitting bodies
-	public void splitBody(Body2D body) {
-		double volume = (4 / 3.0) * Math.PI * Math.pow(body.getRadius(), 3);
-		double newR = Math.pow((3 / 4.0) * (volume / 4) / Math.PI, 1 / 3.0);
-		double newM = body.getMass() / 4;
-		// splits into four bodies
-		for (int i = -1; i <= 1; i += 2) {
-			for (int j = -1; j <= 1; j += 2) {
-				double newX = body.getSX() + (body.getRadius() - newR / 2) * i;
-				double newY = body.getSY() + (body.getRadius() - newR / 2) * j;
-				bodies.add(new Body2D(body.getColor(), newM, newR, newX, newY, body.getVX(), body.getVY()));
+	public boolean splitBody(Body2D body) {
+		if ((body.getMass() / 4) > minMass) { // lag prevention
+			double volume = (4 / 3.0) * Math.PI * Math.pow(body.getRadius(), 3);
+			double newR = Math.pow((3 / 4.0) * (volume / 4) / Math.PI, 1 / 3.0);
+			double newM = body.getMass() / 4;
+			// splits into four bodies
+			for (int i = -1; i <= 1; i += 2) {
+				for (int j = -1; j <= 1; j += 2) {
+					double newX = body.getSX() + (body.getRadius() - newR / 2) * i;
+					double newY = body.getSY() + (body.getRadius() - newR / 2) * j;
+					bodies.add(new Body2D(body.getColor(), newM, newR, newX, newY, body.getVX(), body.getVY()));
+				}
 			}
+			if (selected == body)
+				selected = bodies.get(bodies.size() - 1 - (int) (Math.random() * 4));
+			bodies.remove(body);
+			return true; // body was split
 		}
-		if (selected == body)
-			selected = bodies.get(bodies.size() - 1 - (int) (Math.random() * 4));
-		bodies.remove(body);
-		// debugging
-		if (debug == true) {
-			System.out.println("Splitting " + body.toString() + ":");
-			System.out.println(bodies.get(bodies.size() - 1).toString());
-			System.out.println(bodies.get(bodies.size() - 2).toString());
-			System.out.println(bodies.get(bodies.size() - 3).toString());
-			System.out.println(bodies.get(bodies.size() - 4).toString());
-			System.out.println();
-			// debugScanner.nextLine();
-		}
+		return false; // body was not split
 	}
 
 	// Roche limit detection
-	/*
 	public void splitCheck() {
 		if (tidalForces == true) {
 			// calculations
@@ -190,16 +187,11 @@ public class NBody2DPanel extends JPanel {
 						double d1 = body.getRadius() * Math.pow(2 * (otherBody.getMass() / body.getMass()), 1 / 3.0);
 						double d2 = otherBody.getRadius() * Math.pow(2 * (body.getMass() / otherBody.getMass()), 1 / 3.0);
 						// checking
-						if (z < d1)
+						if (z < d1) {
 							body.toSplit = true;
-						if (z < d2)
+						}
+						if (z < d2) {
 							otherBody.toSplit = true;
-						// debugging
-						if (debug == true) {
-							System.out.println("Debug: " + body.toString() + " and " + otherBody.toString());
-							System.out.println("Debug: " + z + ", " + d1 + ", " + d2);
-							System.out.println();
-							// debugScanner.nextLine();
 						}
 					}
 				}
@@ -209,45 +201,8 @@ public class NBody2DPanel extends JPanel {
 			for (int i = 0; i < n; i++) {
 				Body2D body = bodies.get(i);
 				if (body.toSplit) {
-					splitBody(body);
-					i--;
-				}
-			}
-		}
-	}
-	*/
-
-	// shitty Roche limit detection
-	public void splitCheck() {
-		if (tidalForces == true) {
-			for (int i = 0; i < bodies.size(); i++) {
-				Body2D body = bodies.get(i);
-				for (int j = 0; j < bodies.size(); j++) {
-					if (i != j) {
-						Body2D otherBody = bodies.get(j);
-						// distance
-						double x = otherBody.getSX() - body.getSX();
-						double y = otherBody.getSY() - body.getSY();
-						double z = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-						// calculating Roche limits
-						double d1 = body.getRadius() * Math.pow(2 * (otherBody.getMass() / body.getMass()), 1 / 3.0);
-						double d2 = otherBody.getRadius() * Math.pow(2 * (body.getMass() / otherBody.getMass()), 1 / 3.0);
-						// debugging
-						if (selected != null && (selected.equals(body) || selected.equals(otherBody))) {
-							System.out.println("Debug: " + body.toString() + " and " + otherBody.toString());
-							System.out.println("Debug: " + z + ", " + d1 + ", " + d2);
-							System.out.println();
-						}
-						// checking
-						if (z < d1) {
-							splitBody(body);
-							return;
-						}
-						if (z < d2) {
-							splitBody(otherBody);
-							return;
-						}
-					}
+					if (splitBody(body))
+						i--;
 				}
 			}
 		}
@@ -361,6 +316,24 @@ public class NBody2DPanel extends JPanel {
 				g.drawLine(x1, y1 * -1, x2, y2 * -1);
 			}
 		}
+		// barycenter
+		if (barycenter == true) {
+			double bx = 0;
+			double by = 0;
+			double m = 0;
+			for (Body2D body : bodies) {
+				bx += body.getMass() * body.getSX();
+				by += body.getMass() * body.getSY();
+				m += body.getMass();
+			}
+			bx /= m;
+			by /= m;
+			bx = convert(bx, cameraX);
+			by = convert(by, cameraY);
+			g.setColor(Color.WHITE);
+			g.drawLine((int) (bx - 5), (int) (by * -1), (int) (bx + 5), (int) (by * -1));
+			g.drawLine((int) (bx), (int) (by * -1 - 5), (int) (bx), (int) (by * -1 + 5));
+		}
 
 		// divvying up work between cores
 		num = bodies.size() / n;
@@ -460,7 +433,7 @@ public class NBody2DPanel extends JPanel {
 			g.setFont(new Font("Dialog", Font.PLAIN, 14)); // title font
 			g.drawString("2D N-Body Simulator", 10, 20); // program title
 			g.setFont(new Font("Dialog", Font.PLAIN, 10)); // subtitle font
-			g.drawString("v.3.4", 145, 20); // program version
+			g.drawString("v.3.5", 145, 20); // program version
 			g.drawString("by Jason Kim", 10, 35); // program title
 
 			g.setFont(new Font("Dialog", Font.PLAIN, 12)); // regular font
@@ -485,20 +458,21 @@ public class NBody2DPanel extends JPanel {
 				menu.add("Comma - Decrease Time Speed");
 				menu.add("");
 				menu.add("Physics Mode: " + physicsMode);
-				menu.add("0: Multithreading (Experimental)");
-				menu.add("1: Precise");
-				menu.add("2: Fast");
+				menu.add("Alt+0: Multithreading (Experimental)");
+				menu.add("Alt+1: Precise");
+				menu.add("Alt+2: Fast");
+				menu.add("B - Toggle Barycenter");
 				menu.add("");
 				menu.add("Scenario: " + scenario);
-				menu.add("Alt+1: Lone Planet");
-				menu.add("Alt+2: Binary System");
-				menu.add("Alt+3: Three Bodies");
-				menu.add("Alt+4: Random");
-				menu.add("Alt+5: Sun and Planet");
-				menu.add("Alt+6: Primordial");
-				menu.add("Alt+7: Trojans");
-				menu.add("Alt+8: Solar System");
-				menu.add("Alt+9: Sagittarius A (beta)");
+				menu.add("1: Lone Planet");
+				menu.add("2: Binary System");
+				menu.add("3: Three Bodies");
+				menu.add("4: Random");
+				menu.add("5: Sun and Planet");
+				menu.add("6: Primordial");
+				menu.add("7: Trojans");
+				menu.add("8: Solar System");
+				menu.add("9: Sagittarius A (beta)");
 				menu.add("");
 				menu.add("Trail Length: " + trailLen);
 				menu.add("Z - Increase Trails");
@@ -549,6 +523,8 @@ public class NBody2DPanel extends JPanel {
 				menu.add("Physics Mode: " + physicsMode);
 				menu.add("Collisions: " + collisions);
 				menu.add("Tidal Forces: " + tidalForces);
+				menu.add("Barycenter: " + barycenter);
+				menu.add("Minimum Mass: " + minMass);
 				menu.add("# of Bodies: " + bodies.size());
 				menu.add("Trail Length: " + trailLen);
 				if (bodies.size() > 0) {
@@ -710,66 +686,72 @@ public class NBody2DPanel extends JPanel {
 			int keyCode = e.getKeyCode();
 
 			// scenarios
-			if (alt == true && keyCode == KeyEvent.VK_0) {
-				scenario = 0;
-				reset();
-			} else if (alt == true && keyCode == KeyEvent.VK_1) {
-				scenario = 1;
-				reset();
-			} else if (alt == true && keyCode == KeyEvent.VK_2) {
-				scenario = 2;
-				reset();
-			} else if (alt == true && keyCode == KeyEvent.VK_3) {
-				scenario = 3;
-				reset();
-			} else if (alt == true && keyCode == KeyEvent.VK_4) {
-				scenario = 4;
-				reset();
-			} else if (alt == true && keyCode == KeyEvent.VK_5) {
-				scenario = 5;
-				reset();
-			} else if (alt == true && keyCode == KeyEvent.VK_6) {
-				scenario = 6;
-				reset();
-			} else if (alt == true && keyCode == KeyEvent.VK_7) {
-				scenario = 7;
-				reset();
-			} else if (alt == true && keyCode == KeyEvent.VK_8) {
-				scenario = 8;
-				reset();
-			} else if (alt == true && keyCode == KeyEvent.VK_9) {
-				scenario = 9;
-				reset();
+			if (alt == false) {
+				if (keyCode == KeyEvent.VK_0) {
+					scenario = 0;
+					reset();
+				} else if (keyCode == KeyEvent.VK_1) {
+					scenario = 1;
+					reset();
+				} else if (keyCode == KeyEvent.VK_2) {
+					scenario = 2;
+					reset();
+				} else if (keyCode == KeyEvent.VK_3) {
+					scenario = 3;
+					reset();
+				} else if (keyCode == KeyEvent.VK_4) {
+					scenario = 4;
+					reset();
+				} else if (keyCode == KeyEvent.VK_5) {
+					scenario = 5;
+					reset();
+				} else if (keyCode == KeyEvent.VK_6) {
+					scenario = 6;
+					reset();
+				} else if (keyCode == KeyEvent.VK_7) {
+					scenario = 7;
+					reset();
+				} else if (keyCode == KeyEvent.VK_8) {
+					scenario = 8;
+					reset();
+				} else if (keyCode == KeyEvent.VK_9) {
+					scenario = 9;
+					reset();
+				}
 			}
 
 			// physics
-			else if (keyCode == KeyEvent.VK_H) {
+			if (keyCode == KeyEvent.VK_H) {
 				n++;
+				minMass *= 10;
 			} else if (keyCode == KeyEvent.VK_N) {
 				n--;
 				if (n < 1)
 					n = 1;
-			} else if (keyCode == KeyEvent.VK_0) { // physics mode 0
+				minMass /= 10;
+			} else if (alt == true && keyCode == KeyEvent.VK_0) { // physics mode 0
 				physicsMode = 0;
-			} else if (keyCode == KeyEvent.VK_1) { // physics mode 1
+			} else if (alt == true && keyCode == KeyEvent.VK_1) { // physics mode 1
 				physicsMode = 1;
-			} else if (keyCode == KeyEvent.VK_2) { // physics mode 2
+			} else if (alt == true && keyCode == KeyEvent.VK_2) { // physics mode 2
 				physicsMode = 2;
 			}
 
 			// sim
-			else if (e.getKeyCode() == KeyEvent.VK_SPACE) { // pause
+			else if (keyCode == KeyEvent.VK_SPACE) { // pause
 				paused = !paused;
-			} else if (e.getKeyCode() == KeyEvent.VK_R) { // reset
+			} else if (keyCode == KeyEvent.VK_R) { // reset
 				reset();
-			} else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) { // exit
+			} else if (keyCode == KeyEvent.VK_ESCAPE) { // exit
 				System.exit(0);
+			} else if (keyCode == KeyEvent.VK_B) { // barycenter
+				barycenter = !barycenter;
 			}
 
 			// menu
-			else if (e.getKeyCode() == KeyEvent.VK_F2) { // menu view
+			else if (keyCode == KeyEvent.VK_F2) { // menu view
 				clear = !clear;
-			} else if (e.getKeyCode() == KeyEvent.VK_F3) { // debug
+			} else if (keyCode == KeyEvent.VK_F3) { // debug
 				debug = !debug;
 			}
 
@@ -844,14 +826,15 @@ public class NBody2DPanel extends JPanel {
 
 	public void reset() {
 
+		// sim
+		paused = true;
+		timeMult = 1;
+		timeScale = stepSize / targetFPS;
+		barycenter = false;
 		// camera
 		cameraX = 0.0;
 		cameraY = 0.0;
 		selected = null;
-		// time
-		paused = true;
-		timeMult = 1;
-		timeScale = stepSize / targetFPS;
 		// trail
 		trailLen = 0;
 		bodies.clear();
@@ -887,15 +870,15 @@ public class NBody2DPanel extends JPanel {
 			for (int i = 0; i < 3; i++) {
 				double sx = (Math.random() - 0.5) * screenWidth * screenScale;
 				double sy = (Math.random() - 0.5) * screenHeight * screenScale;
-				double vx = (Math.random() - 0.5) * screenHeight * 50;
-				double vy = (Math.random() - 0.5) * screenHeight * 50;
+				double vx = (Math.random() - 0.5) * screenHeight * 100;
+				double vy = (Math.random() - 0.5) * screenHeight * 100;
 				bodies.add(new Body2D(1.989 * Math.pow(10, 30), 696340000.0, sx, sy, vx, vy));
 			}
 		}
 
 		// generates sun-sized objects
 		else if (scenario == 4) {
-			screenScale = 1000000000;
+			screenScale = 500000000;
 			physicsMode = 2;
 			for (int i = 0; i < 1000; i++) {
 				double sx = (Math.random() - 0.5) * screenWidth * screenScale;
@@ -1323,7 +1306,7 @@ public class NBody2DPanel extends JPanel {
 
 		// tidal forces demonstration
 		else if (scenario == 9) {
-			screenScale = 250000000;
+			screenScale = 125000000;
 			physicsMode = 2;
 
 			// Sagittarius A
@@ -1334,8 +1317,8 @@ public class NBody2DPanel extends JPanel {
 			// Sun(s)
 			double mass = 1.989 * Math.pow(10, 30);
 			double radius = 696340000.0;
-			for (int i = 0; i < 10; i++) {
-				for (int j = 0; j < 3; j++) {
+			for (int i = 0; i < 6; i++) {
+				for (int j = 0; j < 1; j++) {
 					double t = Math.random() * 2 * Math.PI;
 					double r = holeRadius * 2 * (i + 1);
 					double sx = r * Math.cos(t);
@@ -1346,8 +1329,14 @@ public class NBody2DPanel extends JPanel {
 					bodies.add(new Body2D(Color.WHITE, mass, radius, sx, sy, vx, vy));
 				}
 			}
+			/*
+			double sx = 0.0;
+			double sy = holeRadius * 12;
+			double vx = Math.pow(10, 7.5) * -1;
+			double vy = 0.0;
+			bodies.add(new Body2D(Color.WHITE, mass, radius, sx, sy, vx, vy));
+			*/
 		}
-
 	}
 
 }
