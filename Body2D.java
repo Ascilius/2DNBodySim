@@ -1,6 +1,4 @@
 import java.awt.Color;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.util.ArrayList;
 
 public class Body2D {
@@ -17,7 +15,7 @@ public class Body2D {
 	boolean locked;
 	boolean toSplit = false;
 
-	ArrayList<double[]> trail = new ArrayList<double[]>();
+	private Trail trail = new Trail();
 
 	public Body2D(double mass, double radius, double sx, double sy, double vx, double vy) {
 		this.mass = mass;
@@ -66,12 +64,9 @@ public class Body2D {
 		sy += vy * timeStep;
 	}
 
+	// add a point to the trail (TODO)
 	public void addTrail(int trailLen) {
-		double[] newPoint = { sx, sy };
-		trail.add(newPoint);
-		while (trailLen != -1 && trail.size() > trailLen) {
-			trail.remove(0);
-		}
+		
 	}
 
 	public Body2D collision(Body2D otherBody) {
@@ -135,7 +130,11 @@ public class Body2D {
 		}
 
 	}
-
+	
+	public void setColor(Color c) {
+		this.c = c;
+	}
+	
 	public Color getColor() {
 		return c;
 	}
@@ -172,12 +171,11 @@ public class Body2D {
 		return ay;
 	}
 
-	public ArrayList<double[]> getTrail() {
+	public Trail getTrail() {
 		return trail;
 	}
 
-	// for multithreading
-	public Body2D clone() {
+	public Body2D copy() {
 		return new Body2D(c, mass, radius, sx, sy, vx, vy);
 	}
 

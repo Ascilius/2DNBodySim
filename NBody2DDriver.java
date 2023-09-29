@@ -24,14 +24,3 @@ public class NBody2DDriver {
 		
 	}
 }
-
-/*
-To-Do:
- - mass/volume conservation
- - fluid dynamics
- - better collisions
- - view orbit
- - rotation
- - relativistic effects
- - body placement
-*/
