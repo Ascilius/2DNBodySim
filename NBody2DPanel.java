@@ -81,7 +81,6 @@ public class NBody2DPanel extends JPanel {
 	// body locator
 	ArrayList<Body2D> sortedBodies; // sorted bodies based on mass
 	Rectangle[] bodyBounds; // bounds for clickable areas to select bodies
-	
 	// nothing
 	private int nothing = 0;
 	private int nothing_limit = 10;
@@ -117,6 +116,8 @@ public class NBody2DPanel extends JPanel {
 	public void reset() {
 		// simulation
 		paused = true;
+		collisions = true;
+		tidalForces = true;
 		timeMult = 1;
 		timeScale = stepSize / targetFPS;
 		frames.clear();
@@ -158,6 +159,8 @@ public class NBody2DPanel extends JPanel {
 
 		// three-bodies
 		else if (scenario == 3) {
+			collisions = false;
+			tidalForces = false;
 			screenScale = 50000000;
 			physicsMode = 1;
 			minMass = Math.pow(10, 28);
@@ -653,6 +656,57 @@ public class NBody2DPanel extends JPanel {
 			*/
 		}
 
+		// colliding saturns
+		else if (scenario == 0) {
+			// simulation
+			minMass = Math.pow(10, 22);
+			screenScale = 2500000;
+			physicsMode = 2;
+
+			// Saturn 1
+			double saturnM = 568 * Math.pow(10, 24);
+			double saturnR = 120536000.0 / 2;
+			double saturnSX = -500000000;
+			double saturnSY = -125000000;
+			double saturnVX = 10000;
+			double saturnVY = 0;
+			bodies.add(new Body2D(Color.WHITE, saturnM, saturnR, saturnSX, saturnSY, saturnVX, saturnVY));
+			// Rings
+			for (int i = 0; i < 500; i++) {
+				double mass = Math.pow(10, 10);
+				double radius = 1000.0;
+				double t = Math.random() * 2 * Math.PI;
+				double r = 75000000.0 * 2 + Math.random() * (137000000.0 - 75000000.0);
+				double sx = r * Math.cos(t);
+				double sy = r * Math.sin(t);
+				double v = Math.sqrt(G * saturnM / r);
+				double vx = v * Math.cos(t + Math.PI / 2);
+				double vy = v * Math.sin(t + Math.PI / 2);
+				bodies.add(new Body2D(mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+			}
+
+			// Saturn 2
+			saturnM = 568 * Math.pow(10, 24);
+			saturnR = 120536000.0 / 2;
+			saturnSX *= -1;
+			saturnSY *= -1;
+			saturnVX *= -1;
+			saturnVY = 0;
+			bodies.add(new Body2D(Color.WHITE, saturnM, saturnR, saturnSX, saturnSY, saturnVX, saturnVY));
+			// Rings
+			for (int i = 0; i < 500; i++) {
+				double mass = Math.pow(10, 10);
+				double radius = 1000.0;
+				double t = Math.random() * 2 * Math.PI;
+				double r = 75000000.0 * 2 + Math.random() * (137000000.0 - 75000000.0);
+				double sx = r * Math.cos(t);
+				double sy = r * Math.sin(t);
+				double v = Math.sqrt(G * saturnM / r);
+				double vx = v * Math.cos(t + Math.PI / 2);
+				double vy = v * Math.sin(t + Math.PI / 2);
+				bodies.add(new Body2D(mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+			}
+		}
 		// first frame
 		addFrame();
 	}
@@ -992,14 +1046,21 @@ public class NBody2DPanel extends JPanel {
 			cameraX = selected.getSX();
 			cameraY = selected.getSY();
 		}
-		
+
 		// aligning to top left corner
 		g.translate(screenWidth / -2, screenHeight / -2);
-		
+
 		// pause border
 		if (paused && text)
 			drawPauseBorder(g);
-		
+
+		// aligning to top left corner
+		g.translate(screenWidth / -2, screenHeight / -2);
+
+		// pause border
+		if (paused && text)
+			drawPauseBorder(g);
+
 		// drawing text and debug stuff
 		if (text)
 			drawText(g);
@@ -1047,19 +1108,18 @@ public class NBody2DPanel extends JPanel {
 			frame--;
 		}
 	}
-	
+
 	// drawing pause border
 	public void drawPauseBorder(Graphics2D g) {
 		// red bc its noticeable
 		g.setColor(Color.RED);
 		int w = 5; // width of border in pixels
-		
 		g.fillRect(0, 0, screenWidth, w); // top
 		g.fillRect(0, 0, w, screenHeight); // left
 		g.fillRect(0, screenHeight - w, screenWidth, w); // bottom
 		g.fillRect(screenWidth - w, 0, w, screenHeight); // right
 	}
-	
+
 	// drawing text (regular or debug)
 	public void drawText(Graphics2D g) {
 		// setting text color
@@ -1074,7 +1134,6 @@ public class NBody2DPanel extends JPanel {
 			g.setFont(new Font("Dialog", Font.PLAIN, 10)); // subtitle font
 			g.drawString("v.3.6", 145, 20); // version
 			g.drawString("by Jason Kim", 10, 35); // by me
-			
 			g.setFont(new Font("Dialog", Font.PLAIN, 12)); // regular font
 			if (help) {
 				// starting position is moved because of title
@@ -1136,8 +1195,7 @@ public class NBody2DPanel extends JPanel {
 					menu.add("Velocity: (" + round(selected.getVX(), 1) + ", " + round(selected.getVY(), 1) + ")");
 					menu.add("Acceleration: (" + round(selected.getAX(), 5) + ", " + round(selected.getAY(), 5) + ")");
 				}
-			}
-			else
+			} else
 				g.drawString("H - Help", 10, 60);
 		}
 
@@ -1201,7 +1259,6 @@ public class NBody2DPanel extends JPanel {
 				menu.add("Acceleration: (" + round(selected.getAX(), 5) + ", " + round(selected.getAY(), 5) + ")");
 			}
 		}
-		
 		if (help || debug) {
 			// body locator
 			String[] bodyStrings; // body details of the top 5 massive bodies
@@ -1277,17 +1334,18 @@ public class NBody2DPanel extends JPanel {
 			timeScale *= x;
 		}
 	}
-	
+
 	// nothing to see here
 	public void doNothing() {
 		nothing = 0;
 		nothing_limit = 1;
 		// nothing_mode = !nothing_mode;
-		for (Body2D body: bodies)
+		for (Body2D body : bodies)
 			body.setColor(random_color());
 	}
+
 	public Color random_color() {
-		return new Color((int)(Math.random() * 256), (int)(Math.random() * 256), (int)(Math.random() * 256));
+		return new Color((int) (Math.random() * 255), (int) (Math.random() * 255), (int) (Math.random() * 255));
 	}
 
 	class KeyHandler extends KeyAdapter {

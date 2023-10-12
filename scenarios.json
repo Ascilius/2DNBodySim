@@ -1,0 +1,17 @@
+{
+	"simulation": {
+		"screenScale": 25000.0,
+		"physicsMode": 0,
+	},
+	"bodies": [
+		{
+			"color": Color.WHITE;
+			"mass": 5.97 * Math.pow(10, 24);
+			"radius": 12756000.0 / 2;
+			"sx": 0.0;
+			"sy": 0.0;
+			"vx": 0.0;
+			"vy": 0.0;
+		}
+	]
+}

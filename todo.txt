@@ -1,0 +1,116 @@
+To-Do:
+ - efficiency
+    - optimizations
+    - sphere of influence
+ - trail overhaul
+    - t-stamp
+    - 
+ - roche limit
+    - variable minMass
+ - hill radius
+ - gui
+    - TOFIX: bodies can still be selected from hidden gui
+ - colored gravitational field
+ - rewind system
+    - move back with pause and arrowkeys
+    - overwrite future
+    - memory limit
+ - save/load scenarios
+    - Added scenario loading/saving system
+    - Scenarios are now located in json files
+    - Custom scenarios can be created from json files
+    - Users can use CTRL+S to save a screenshot of the current state of the simulation
+    - CTRL-Z saves the state of the simulation from 10 real-world seconds ago
+    - CTRL-L opens a file explorer, where json files that contain scenarios can be selected
+ - Users can now run multiple simulations in a single session
+    - CTRL-N creates a new simulation
+    - Use [ and ] to switch between simulations
+    - Press [ and ] at the same time to open two simulations at once
+       - Select a window with the mouse to change which window you switch
+ - better collisions
+ - view orbit
+ - rotation
+ - body placement
+ - key input overhaul
+ - body locator
+    - optimize sorting algo
+ - detect display fps
+ - disable tidal forces when collisions are disabled
+ 
+
+Regular:
+	title
+	f2 no text
+	f3 debug text
+
+	screenScale 
+	
+	paused
+	timeScale
+	
+	barycenter on/off
+	cameraX = 0.0;
+	cameraY = 0.0;
+	
+	selected = null;
+	
+	// body locator
+
+Debug:
+	version
+	
+	debug mode on
+	screenWidth x screenHeight;
+	screenScale = 1.0; // m per pixel
+	
+	targetFPS = 60.0;
+	targetTime = 1000.0 / targetFPS; // ms
+	totalTime;
+	totalFrames;
+	currentFPS;
+	
+	//
+	barycenter = false;
+	draw baryBounds	
+	
+	// camera location
+	cameraX = 0.0;
+	cameraY = 0.0;
+	
+	// selected body
+	selected = null;
+	body.toString()
+	
+	// keyboard and mouse
+	private ArrayList<Integer> heldKeys = new ArrayList<>();
+	private Point click = null; // location of the last click
+	
+	// simulation
+	private ArrayList<ArrayList<Body2D>> frames = new ArrayList<ArrayList<Body2D>>();
+	private int frame = 0;
+	private final int max_frames = 1000; // to prevent memory overuse
+	private boolean paused = true;
+	private boolean collisions = true;
+	private boolean tidalForces = true;
+	private double minMass = Math.pow(10, 28); // kg
+	
+	// physics
+	private int physicsMode;
+	// multithreading
+	private int n = Runtime.getRuntime().availableProcessors() - 1;
+	private int num, rem;
+	private ArrayList<Thread> threads;
+	// precise
+	private final double stepSize = 60.0; // seconds
+	private final double timeStep = stepSize / targetFPS; // s
+	private int timeMult = 1;
+	// fast
+	private double timeScale = stepSize / targetFPS; // s
+	
+	// bodies
+	private ArrayList<Body2D> bodies = new ArrayList<Body2D>();
+	private int trailLen = 0; // -1 = infinite trail
+	private boolean relative = false;
+	private int scenario;
+	
+	// body locator
