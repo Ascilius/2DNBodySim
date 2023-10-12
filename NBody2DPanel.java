@@ -81,7 +81,6 @@ public class NBody2DPanel extends JPanel {
 	// body locator
 	ArrayList<Body2D> sortedBodies; // sorted bodies based on mass
 	Rectangle[] bodyBounds; // bounds for clickable areas to select bodies
-
 	// nothing
 	private int nothing = 0;
 	private int nothing_limit = 10;
@@ -708,7 +707,6 @@ public class NBody2DPanel extends JPanel {
 				bodies.add(new Body2D(mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 			}
 		}
-
 		// first frame
 		addFrame();
 	}
@@ -1056,6 +1054,13 @@ public class NBody2DPanel extends JPanel {
 		if (paused && text)
 			drawPauseBorder(g);
 
+		// aligning to top left corner
+		g.translate(screenWidth / -2, screenHeight / -2);
+
+		// pause border
+		if (paused && text)
+			drawPauseBorder(g);
+
 		// drawing text and debug stuff
 		if (text)
 			drawText(g);
@@ -1109,7 +1114,6 @@ public class NBody2DPanel extends JPanel {
 		// red bc its noticeable
 		g.setColor(Color.RED);
 		int w = 5; // width of border in pixels
-
 		g.fillRect(0, 0, screenWidth, w); // top
 		g.fillRect(0, 0, w, screenHeight); // left
 		g.fillRect(0, screenHeight - w, screenWidth, w); // bottom
@@ -1130,7 +1134,6 @@ public class NBody2DPanel extends JPanel {
 			g.setFont(new Font("Dialog", Font.PLAIN, 10)); // subtitle font
 			g.drawString("v.3.6", 145, 20); // version
 			g.drawString("by Jason Kim", 10, 35); // by me
-
 			g.setFont(new Font("Dialog", Font.PLAIN, 12)); // regular font
 			if (help) {
 				// starting position is moved because of title
@@ -1256,7 +1259,6 @@ public class NBody2DPanel extends JPanel {
 				menu.add("Acceleration: (" + round(selected.getAX(), 5) + ", " + round(selected.getAY(), 5) + ")");
 			}
 		}
-
 		if (help || debug) {
 			// body locator
 			String[] bodyStrings; // body details of the top 5 massive bodies
@@ -1343,7 +1345,7 @@ public class NBody2DPanel extends JPanel {
 	}
 
 	public Color random_color() {
-		return new Color((int) (Math.random() * 256), (int) (Math.random() * 256), (int) (Math.random() * 256));
+		return new Color((int) (Math.random() * 255), (int) (Math.random() * 255), (int) (Math.random() * 255));
 	}
 
 	class KeyHandler extends KeyAdapter {
