@@ -1,7 +1,7 @@
 # 2DNBodySim
 A personal project I work on in my "spare" time.
 
-Version 3.6.1 (2023-10-13):
+### Version 3.6.1 (2023-10-13)
  - restored text drawing
  - restored body color blending
  - restored barycenter selection
