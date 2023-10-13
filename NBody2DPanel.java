@@ -1,4 +1,4 @@
-// Java 2D N-Body Simulation Version 3.6.1 by Jason Kim
+// Java 2D N-Body Simulation Version 3.6.2 by Jason Kim
 
 import java.awt.Color;
 import java.awt.Font;
@@ -76,6 +76,7 @@ public class NBody2DPanel extends JPanel {
 	private int scenario = 2;
 	// body locator
 	ArrayList<Body2D> sortedBodies; // sorted bodies based on mass
+	private final int body_locator_n = 5; // number of bodies to display on the body locator
 	Rectangle[] bodyBounds = {}; // bounds for clickable areas to select bodies
 	// barycenter
 	private boolean barycenter = false; // show/hide barycenter
@@ -137,8 +138,8 @@ public class NBody2DPanel extends JPanel {
 			if (debug) {
 				screenScale = 5000000;
 				physicsMode = 2;
-				bodies.add(new Body2D(1.989 * Math.pow(10, 30), 696340000.0, 0.0, 0.0, 0.0, 0.0));
-				bodies.add(new Body2D(5.972 * Math.pow(10, 24), 10378140.0, screenScale * 500, 0, 0.0, 160000.0));
+				bodies.add(new Body2D("Sol", 1.989 * Math.pow(10, 30), 696340000.0, 0.0, 0.0, 0.0, 0.0));
+				bodies.add(new Body2D("Earth", 5.972 * Math.pow(10, 24), 10378140.0, screenScale * 500, 0, 0.0, 160000.0));
 			}
 			// colliding saturns
 			else {
@@ -154,7 +155,7 @@ public class NBody2DPanel extends JPanel {
 				double saturnSY = -125000000;
 				double saturnVX = 10000;
 				double saturnVY = 0;
-				bodies.add(new Body2D(Color.WHITE, saturnM, saturnR, saturnSX, saturnSY, saturnVX, saturnVY));
+				bodies.add(new Body2D("Saturn 1", saturnM, saturnR, saturnSX, saturnSY, saturnVX, saturnVY));
 				// Rings
 				for (int i = 0; i < 500; i++) {
 					double mass = Math.pow(10, 10);
@@ -166,7 +167,7 @@ public class NBody2DPanel extends JPanel {
 					double v = Math.sqrt(G * saturnM / r);
 					double vx = v * Math.cos(t + Math.PI / 2);
 					double vy = v * Math.sin(t + Math.PI / 2);
-					bodies.add(new Body2D(mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+					bodies.add(new Body2D("Saturn 1's Ring", mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 				}
 
 				// Saturn 2
@@ -176,7 +177,7 @@ public class NBody2DPanel extends JPanel {
 				saturnSY *= -1;
 				saturnVX *= -1;
 				saturnVY = 0;
-				bodies.add(new Body2D(Color.WHITE, saturnM, saturnR, saturnSX, saturnSY, saturnVX, saturnVY));
+				bodies.add(new Body2D("Saturn 2", saturnM, saturnR, saturnSX, saturnSY, saturnVX, saturnVY));
 				// Rings
 				for (int i = 0; i < 500; i++) {
 					double mass = Math.pow(10, 10);
@@ -188,7 +189,7 @@ public class NBody2DPanel extends JPanel {
 					double v = Math.sqrt(G * saturnM / r);
 					double vx = v * Math.cos(t + Math.PI / 2);
 					double vy = v * Math.sin(t + Math.PI / 2);
-					bodies.add(new Body2D(mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+					bodies.add(new Body2D("Saturn 2's Ring", mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 				}
 			}
 		}
@@ -198,7 +199,7 @@ public class NBody2DPanel extends JPanel {
 			screenScale = 25000.0;
 			physicsMode = 0;
 			minMass = Math.pow(10, 22);
-			bodies.add(new Body2D(Color.WHITE, 5.97 * Math.pow(10, 24), 12756000.0 / 2, 0.0, 0.0, 0.0, 0.0));
+			bodies.add(new Body2D("Lone Planet", 5.97 * Math.pow(10, 24), 12756000.0 / 2, 0.0, 0.0, 0.0, 0.0));
 		}
 
 		// two-body system
@@ -244,19 +245,19 @@ public class NBody2DPanel extends JPanel {
 			physicsMode = 2;
 			minMass = Math.pow(10, 19.5);
 			double m = 5.972 * Math.pow(10, 24);
-			bodies.add(new Body2D(m, 6378140.0, 0.0, 0.0, 0.0, 0.0));
+			bodies.add(new Body2D("Earth", m, 6378140.0, 0.0, 0.0, 0.0, 0.0));
 			double r = 10000000.0;
 			double v = Math.sqrt(G * m / r);
-			bodies.add(new Body2D(7.342 * Math.pow(10, 22), 1737400.0, r, 0.0, 0.0, v));
+			bodies.add(new Body2D("Luna", 7.342 * Math.pow(10, 22), 1737400.0, r, 0.0, 0.0, v));
 			r += 20000000.0;
 			v = Math.sqrt(G * m / r);
-			bodies.add(new Body2D(7.342 * Math.pow(10, 22), 1737400.0, 0.0, r, v * -1, 0.0));
+			bodies.add(new Body2D("Luna", 7.342 * Math.pow(10, 22), 1737400.0, 0.0, r, v * -1, 0.0));
 			r += 20000000.0;
 			v = Math.sqrt(G * m / r);
-			bodies.add(new Body2D(7.342 * Math.pow(10, 22), 1737400.0, r * -1, 0.0, 0.0, v * -1));
+			bodies.add(new Body2D("Luna", 7.342 * Math.pow(10, 22), 1737400.0, r * -1, 0.0, 0.0, v * -1));
 			r += 20000000.0;
 			v = Math.sqrt(G * m / r);
-			bodies.add(new Body2D(7.342 * Math.pow(10, 22), 1737400.0, 0.0, r * -1, v, 0.0));
+			bodies.add(new Body2D("Luna", 7.342 * Math.pow(10, 22), 1737400.0, 0.0, r * -1, v, 0.0));
 		}
 
 		// primordial system consisting of Earth and Moon sized objects
@@ -308,7 +309,7 @@ public class NBody2DPanel extends JPanel {
 				double v = Math.sqrt(G * m / r);
 				double vx = v * Math.cos(t + Math.PI / 2);
 				double vy = v * Math.sin(t + Math.PI / 2);
-				bodies.add(new Body2D(mass, radius, sx, sy, vx, vy));
+				bodies.add(new Body2D("Asteroid", mass, radius, sx, sy, vx, vy));
 			}
 			// Jupiter
 			double mass = 1898 * Math.pow(10, 24);
@@ -320,7 +321,7 @@ public class NBody2DPanel extends JPanel {
 			double v = Math.sqrt(G * m / r);
 			double vx = v * Math.cos(t + Math.PI / 2);
 			double vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, sx, sy, vx, vy));
+			bodies.add(new Body2D("Jupiter", Color.WHITE, mass, radius, sx, sy, vx, vy));
 		}
 
 		// really inaccurate solar system
@@ -330,7 +331,7 @@ public class NBody2DPanel extends JPanel {
 
 			// Sun
 			double m = 1.989 * Math.pow(10, 30);
-			bodies.add(new Body2D(m, 696340000.0, 0.0, 0.0, 0.0, 0.0));
+			bodies.add(new Body2D("Sol", m, 696340000.0, 0.0, 0.0, 0.0, 0.0));
 
 			// Mercury
 			double mass = 0.330 * Math.pow(10, 24);
@@ -342,7 +343,7 @@ public class NBody2DPanel extends JPanel {
 			double v = Math.sqrt(G * m / r);
 			double vx = v * Math.cos(t + Math.PI / 2);
 			double vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.GRAY, mass, radius, sx, sy, vx, vy));
+			bodies.add(new Body2D("Mercury", Color.GRAY, mass, radius, sx, sy, vx, vy));
 
 			// Venus
 			mass = 4.87 * Math.pow(10, 24);
@@ -354,7 +355,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * m / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.YELLOW, mass, radius, sx, sy, vx, vy));
+			bodies.add(new Body2D("Venus", Color.YELLOW, mass, radius, sx, sy, vx, vy));
 
 			// Earth
 			mass = 5.97 * Math.pow(10, 24);
@@ -366,7 +367,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * m / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.BLUE, mass, radius, sx, sy, vx, vy));
+			bodies.add(new Body2D("Earth", Color.BLUE, mass, radius, sx, sy, vx, vy));
 
 			// Moon
 			double earthM = mass;
@@ -383,7 +384,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * earthM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.GRAY, mass, radius, earthSX + sx, earthSY + sy, earthVX + vx, earthVY + vy));
+			bodies.add(new Body2D("Luna", Color.GRAY, mass, radius, earthSX + sx, earthSY + sy, earthVX + vx, earthVY + vy));
 
 			// Mars
 			mass = 0.642 * Math.pow(10, 24);
@@ -395,14 +396,14 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * m / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.RED, mass, radius, sx, sy, vx, vy));
+			bodies.add(new Body2D("Mars", Color.RED, mass, radius, sx, sy, vx, vy));
 			double marsM = mass;
 			double marsSX = sx;
 			double marsSY = sy;
 			double marsVX = vx;
 			double marsVY = vy;
 
-			// Deimos
+			// Phobos
 			mass = 1.0659 * Math.pow(10, 16);
 			radius = 11266.7;
 			t = Math.random() * 2 * Math.PI;
@@ -412,9 +413,9 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * marsM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(mass, radius, marsSX + sx, marsSY + sy, marsVX + vx, marsVY + vy));
+			bodies.add(new Body2D("Phobos", mass, radius, marsSX + sx, marsSY + sy, marsVX + vx, marsVY + vy));
 
-			// Phobos
+			// Deimos
 			mass = 1.4762 * Math.pow(10, 15);
 			radius = 6200.0;
 			t = Math.random() * 2 * Math.PI;
@@ -424,7 +425,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * marsM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(mass, radius, marsSX + sx, marsSY + sy, marsVX + vx, marsVY + vy));
+			bodies.add(new Body2D("Deimos", mass, radius, marsSX + sx, marsSY + sy, marsVX + vx, marsVY + vy));
 
 			// Asteroid Belt
 			for (int i = 0; i < 125; i++) {
@@ -437,7 +438,7 @@ public class NBody2DPanel extends JPanel {
 				v = Math.sqrt(G * m / r);
 				vx = v * Math.cos(t + Math.PI / 2);
 				vy = v * Math.sin(t + Math.PI / 2);
-				bodies.add(new Body2D(mass, radius, sx, sy, vx, vy));
+				bodies.add(new Body2D("Asteroid", mass, radius, sx, sy, vx, vy));
 			}
 
 			// Jupiter
@@ -450,7 +451,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * m / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, sx, sy, vx, vy));
+			bodies.add(new Body2D("Jupiter", Color.WHITE, mass, radius, sx, sy, vx, vy));
 			double jupiterM = mass;
 			double jupiterSX = sx;
 			double jupiterSY = sy;
@@ -467,7 +468,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * jupiterM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.YELLOW, mass, radius, jupiterSX + sx, jupiterSY + sy, jupiterVX + vx, jupiterVY + vy));
+			bodies.add(new Body2D("Io", Color.YELLOW, mass, radius, jupiterSX + sx, jupiterSY + sy, jupiterVX + vx, jupiterVY + vy));
 
 			// Europa
 			mass = 4.799844 * Math.pow(10, 22);
@@ -479,7 +480,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * jupiterM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, jupiterSX + sx, jupiterSY + sy, jupiterVX + vx, jupiterVY + vy));
+			bodies.add(new Body2D("Europa", Color.WHITE, mass, radius, jupiterSX + sx, jupiterSY + sy, jupiterVX + vx, jupiterVY + vy));
 
 			// Ganymede
 			mass = 1.4819 * Math.pow(10, 23);
@@ -491,7 +492,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * jupiterM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, jupiterSX + sx, jupiterSY + sy, jupiterVX + vx, jupiterVY + vy));
+			bodies.add(new Body2D("Ganymede", Color.WHITE, mass, radius, jupiterSX + sx, jupiterSY + sy, jupiterVX + vx, jupiterVY + vy));
 
 			// Callisto
 			mass = 1.075938 * Math.pow(10, 23);
@@ -503,7 +504,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * jupiterM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.GRAY, mass, radius, jupiterSX + sx, jupiterSY + sy, jupiterVX + vx, jupiterVY + vy));
+			bodies.add(new Body2D("Callisto", Color.GRAY, mass, radius, jupiterSX + sx, jupiterSY + sy, jupiterVX + vx, jupiterVY + vy));
 
 			// Saturn
 			mass = 568 * Math.pow(10, 24);
@@ -515,7 +516,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * m / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, sx, sy, vx, vy));
+			bodies.add(new Body2D("Saturn", Color.WHITE, mass, radius, sx, sy, vx, vy));
 			double saturnM = mass;
 			double saturnSX = sx;
 			double saturnSY = sy;
@@ -533,7 +534,7 @@ public class NBody2DPanel extends JPanel {
 				v = Math.sqrt(G * saturnM / r);
 				vx = v * Math.cos(t + Math.PI / 2);
 				vy = v * Math.sin(t + Math.PI / 2);
-				bodies.add(new Body2D(mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+				bodies.add(new Body2D("Saturn's Ring", mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 			}
 
 			// Mimas
@@ -546,7 +547,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * saturnM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.GRAY, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+			bodies.add(new Body2D("Mimas", Color.GRAY, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 
 			// Enceladus
 			mass = 108022.0 * Math.pow(10, 15);
@@ -558,7 +559,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * saturnM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+			bodies.add(new Body2D("Enceladus", Color.WHITE, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 
 			// Tethys
 			mass = 617449.0 * Math.pow(10, 15);
@@ -570,7 +571,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * saturnM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+			bodies.add(new Body2D("Tethys", Color.WHITE, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 
 			// Dione
 			mass = 1095452 * Math.pow(10, 15);
@@ -582,7 +583,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * saturnM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+			bodies.add(new Body2D("Dione", Color.WHITE, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 
 			// Rhea
 			mass = 2306518 * Math.pow(10, 15);
@@ -594,7 +595,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * saturnM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+			bodies.add(new Body2D("Rhea", Color.WHITE, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 
 			// Titan
 			mass = 1.3452 * Math.pow(10, 23);
@@ -606,7 +607,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * saturnM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.YELLOW, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+			bodies.add(new Body2D("Ttian", Color.YELLOW, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 
 			// Iapetus
 			mass = 1805635 * Math.pow(10, 15);
@@ -618,7 +619,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * saturnM / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+			bodies.add(new Body2D("Iapetus", Color.WHITE, mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
 
 			// Uranus
 			mass = 86.8 * Math.pow(10, 24);
@@ -630,7 +631,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * m / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.BLUE, mass, radius, sx, sy, vx, vy));
+			bodies.add(new Body2D("Uranus", Color.BLUE, mass, radius, sx, sy, vx, vy));
 
 			// Neptune
 			mass = 102 * Math.pow(10, 24);
@@ -642,7 +643,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * m / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.BLUE, mass, radius, sx, sy, vx, vy));
+			bodies.add(new Body2D("Neptune", Color.BLUE, mass, radius, sx, sy, vx, vy));
 			double neptuneM = mass;
 			double neptuneSX = sx;
 			double neptuneSY = sy;
@@ -659,7 +660,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * neptuneM / r);
 			vx = v * Math.cos(t - Math.PI / 2);
 			vy = v * Math.sin(t - Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, neptuneSX + sx, neptuneSY + sy, neptuneVX + vx, neptuneVY + vy));
+			bodies.add(new Body2D("Triton", Color.WHITE, mass, radius, neptuneSX + sx, neptuneSY + sy, neptuneVX + vx, neptuneVY + vy));
 
 			// Pluto
 			mass = 0.0130 * Math.pow(10, 24);
@@ -671,7 +672,7 @@ public class NBody2DPanel extends JPanel {
 			v = Math.sqrt(G * m / r);
 			vx = v * Math.cos(t + Math.PI / 2);
 			vy = v * Math.sin(t + Math.PI / 2);
-			bodies.add(new Body2D(Color.WHITE, mass, radius, sx, sy, vx, vy));
+			bodies.add(new Body2D("Pluto", Color.WHITE, mass, radius, sx, sy, vx, vy));
 		}
 
 		// tidal forces demonstration
@@ -683,7 +684,7 @@ public class NBody2DPanel extends JPanel {
 			// Sagittarius A
 			double holeMass = 8.26 * Math.pow(10, 36);
 			double holeRadius = 12000000000.0;
-			bodies.add(new Body2D(Color.BLACK, holeMass, holeRadius, 0.0, 0.0, 0.0, 0.0));
+			bodies.add(new Body2D("Sagittarius A", Color.BLACK, holeMass, holeRadius, 0.0, 0.0, 0.0, 0.0));
 
 			// Sun(s)
 			double mass = 1.989 * Math.pow(10, 30);
@@ -697,7 +698,7 @@ public class NBody2DPanel extends JPanel {
 					double v = Math.sqrt(G * holeMass / r);
 					double vx = v * Math.cos(t + Math.PI / 2);
 					double vy = v * Math.sin(t + Math.PI / 2);
-					bodies.add(new Body2D(Color.WHITE, mass, radius, sx, sy, vx, vy));
+					bodies.add(new Body2D("Unfortunate Star", Color.WHITE, mass, radius, sx, sy, vx, vy));
 				}
 			}
 			/*
@@ -987,13 +988,13 @@ public class NBody2DPanel extends JPanel {
 		// updating camera
 		update_camera();
 
-		// pause border
-		if (paused && text)
-			drawPauseBorder(g);
-
 		// drawing text and debug stuff
 		if (text)
 			drawText(g);
+
+		// pause border
+		if (paused && text)
+			drawPauseBorder(g);
 
 		// frame end
 		final long endTime = System.currentTimeMillis();
@@ -1182,7 +1183,7 @@ public class NBody2DPanel extends JPanel {
 			g.setFont(new Font("Dialog", Font.PLAIN, 14)); // title font
 			g.drawString("2D N-Body Simulator", 10, 20); // program title
 			g.setFont(new Font("Dialog", Font.PLAIN, 10)); // subtitle font
-			g.drawString("v.3.6.1", 145, 20); // version
+			g.drawString("v.3.6.2", 145, 20); // version
 			g.drawString("by Jason Kim", 10, 35); // by me
 			g.setFont(new Font("Dialog", Font.PLAIN, 12)); // regular font
 			if (help) {
@@ -1197,7 +1198,8 @@ public class NBody2DPanel extends JPanel {
 				menu.add("");
 				menu.add("Current Location: (" + round(cameraX, 1) + ", " + round(cameraY, 1) + ")");
 				menu.add("WASD - Move camera");
-				menu.add("Zoom - Shift/Control or Scroll");
+				menu.add("F/V or Scroll - Zoom");
+				menu.add("Hold shift to increase translate/move speed");
 				menu.add(screenScale + " meters per pixel");
 				menu.add("");
 				if (paused)
@@ -1230,7 +1232,8 @@ public class NBody2DPanel extends JPanel {
 				menu.add("6: Primordial");
 				menu.add("7: Trojans");
 				menu.add("8: Solar System");
-				menu.add("9: Sagittarius A (beta)");
+				menu.add("9: Sagittarius A");
+				menu.add("0: Colliding Saturns");
 				/*
 				menu.add("");
 				menu.add("Trail Length: " + trailLen);
@@ -1240,7 +1243,7 @@ public class NBody2DPanel extends JPanel {
 				*/
 				if (selected != null) {
 					menu.add("");
-					menu.add("Currently Selected: " + selected.toString());
+					menu.add("Currently Selected: " + selected.getName());
 					menu.add("Mass: " + selected.getMass());
 					menu.add("Radius: " + selected.getRadius());
 					menu.add("Position: (" + selected.getSX() + ", " + selected.getSY() + ")");
@@ -1335,12 +1338,12 @@ public class NBody2DPanel extends JPanel {
 				sortedBodies.add(j, body);
 			}
 			// generating body details and calculating bounds
-			bodyStrings = new String[Math.min(sortedBodies.size(), 5)];
+			bodyStrings = new String[Math.min(sortedBodies.size(), body_locator_n)];
 			bodyLengths = new int[bodyStrings.length];
 			bodyBounds = new Rectangle[bodyLengths.length];
 			for (int i = 0; i < bodyStrings.length; i++) {
 				Body2D body = sortedBodies.get(i);
-				bodyStrings[i] = body.toString() + ": " + body.getMass() + " kg, " + body.getRadius() + " m";
+				bodyStrings[i] = body.getName() + ": " + body.getMass() + " kg, " + body.getRadius() + " m";
 				bodyLengths[i] = g.getFontMetrics().stringWidth(bodyStrings[i]);
 			}
 			// body locator text
@@ -1383,12 +1386,12 @@ public class NBody2DPanel extends JPanel {
 	public double round(double value, int figs) { // figs: number of places after decimal point
 		return Math.round(value * Math.pow(10, figs)) / Math.pow(10, figs);
 	}
-	
+
 	// pauses the simulation
 	public void pause() {
 		paused = true;
 	}
-	
+
 	// scale time by x
 	public void scaleTime(double x) {
 		if (heldKeys.contains(KeyEvent.VK_SHIFT)) // shift mode
@@ -1414,17 +1417,17 @@ public class NBody2DPanel extends JPanel {
 		for (Body2D body : bodies)
 			body.setColor(random_color());
 	}
-	
+
 	// generates random color
 	public Color random_color() {
 		return new Color((int) (Math.random() * 255), (int) (Math.random() * 255), (int) (Math.random() * 255));
 	}
-	
+
 	// clears held keys
 	public void clear_held_keys() {
 		heldKeys.clear();
 	}
-	
+
 	class KeyHandler extends KeyAdapter {
 
 		public void keyPressed(KeyEvent e) {
@@ -1434,12 +1437,6 @@ public class NBody2DPanel extends JPanel {
 			if (!heldKeys.contains(keyCode))
 				heldKeys.add(keyCode);
 
-			// time
-			if (e.getKeyCode() == KeyEvent.VK_PERIOD) {
-				scaleTime(2.0);
-			} else if (e.getKeyCode() == KeyEvent.VK_COMMA) {
-				scaleTime(0.5);
-			}
 			// rewinding
 			if (paused) { // only works if paused
 				if (e.getKeyCode() == KeyEvent.VK_LEFT) {
@@ -1470,15 +1467,6 @@ public class NBody2DPanel extends JPanel {
 
 		public void keyReleased(KeyEvent e) {
 			int keyCode = e.getKeyCode();
-
-			// TOFIX: alt+tab fix
-			/*
-			if (keyCode == KeyEvent.VK_TAB) {
-				int i = heldKeys.indexOf(KeyEvent.VK_ALT);
-				if (i != -1)
-					heldKeys.remove(i);
-			}
-			*/
 
 			// removing held key
 			int i = heldKeys.indexOf(keyCode);
@@ -1529,6 +1517,13 @@ public class NBody2DPanel extends JPanel {
 				if (48 <= keyCode && keyCode <= 57) {
 					scenario = keyCode - 48;
 					reset();
+				}
+				
+				// time
+				if (e.getKeyCode() == KeyEvent.VK_PERIOD) {
+					scaleTime(2.0);
+				} else if (e.getKeyCode() == KeyEvent.VK_COMMA) {
+					scaleTime(0.5);
 				}
 			}
 		}

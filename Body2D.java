@@ -5,11 +5,14 @@ public class Body2D {
 
 	private final double G = 6.67408 * Math.pow(10, -11);
 
+	private String name = ""; // body name
+
 	// physical properties
 	private double mass, radius, diameter;
 	private double sx, sy; // m
 	private double vx, vy; // m/s
-	private double ax, ay; // m/s^2
+	private double ax = 0.0; // m/s^2
+	private double ay = 0.0;
 
 	// color
 	private Color c = Color.WHITE; // default color
@@ -21,30 +24,42 @@ public class Body2D {
 	// private Rectangle bounds;
 	private Trail trail = new Trail();
 
+	// TOFIX: constructors
+
+	// bodies without name or color
 	public Body2D(double mass, double radius, double sx, double sy, double vx, double vy) {
-		this.mass = mass;
-		this.radius = radius;
-		this.diameter = 2 * radius;
-		this.sx = sx;
-		this.sy = sy;
-		this.vx = vx;
-		this.vy = vy;
-		this.ax = 0;
-		this.ay = 0;
+		set_pp(mass, radius, sx, sy, vx, vy);
 	}
 
-	public Body2D(Color c, double mass, double radius, double sx, double sy, double vx, double vy) {
-		this.c = c;
+	// bodies with name without color
+	public Body2D(String name, double mass, double radius, double sx, double sy, double vx, double vy) {
+		this.name = name;
+		set_pp(mass, radius, sx, sy, vx, vy);
+	}
+
+	// bodies without name with color
+	public Body2D(Color color, double mass, double radius, double sx, double sy, double vx, double vy) {
+		this.c = color;
+		set_pp(mass, radius, sx, sy, vx, vy);
+	}
+
+	// bodies with name and color
+	public Body2D(String name, Color color, double mass, double radius, double sx, double sy, double vx, double vy) {
+		this.name = name;
+		this.c = color;
+		set_pp(mass, radius, sx, sy, vx, vy);
+	}
+
+	// setting initial physical properties
+	public void set_pp(double mass, double radius, double sx, double sy, double vx, double vy) {
 		this.mass = mass;
 		this.radius = radius;
-		this.diameter = 2 * radius;
+		this.diameter = 2 * this.radius;
+
 		this.sx = sx;
 		this.sy = sy;
 		this.vx = vx;
 		this.vy = vy;
-		this.ax = 0;
-		this.ay = 0;
-		// this.locked = locked;
 	}
 
 	public void move(Body2D otherBody, double timeStep) {
@@ -133,11 +148,12 @@ public class Body2D {
 			double newVY = (thisPY + otherPY) / combinedMass;
 
 			// creating new body
-			Body2D newBody = new Body2D(newC, newMass, newRadius, newSX, newSY, newVX, newVY);
+			String newName = "";
 			if (this.mass > otherBody.getMass())
-				newBody.trail = this.trail;
+				newName = this.name;
 			else
-				newBody.trail = otherBody.trail;
+				newName = otherBody.getName();
+			Body2D newBody = new Body2D(newName, newC, newMass, newRadius, newSX, newSY, newVX, newVY);
 
 			// debugging
 			// System.out.println("Debug: " + this.toString() + " colliding with " + otherBody.toString() + " to create " + newBody.toString());
@@ -156,6 +172,13 @@ public class Body2D {
 		this.c = c;
 	}
 
+	public String getName() {
+		if (name.equals(""))
+			return "" + this; // no name; return obj address
+		else
+			return name;
+	}
+
 	public Color getColor() {
 		return c;
 	}
@@ -163,7 +186,7 @@ public class Body2D {
 	public double getRadius() {
 		return radius;
 	}
-	
+
 	public double getDiameter() {
 		return diameter;
 	}
@@ -195,19 +218,19 @@ public class Body2D {
 	public double getAY() {
 		return ay;
 	}
-	
+
 	/*
 	public Rectangle getBounds() {
 		return bounds;
 	}
-
+	
 	public Trail getTrail() {
 		return trail;
 	}
 	*/
 
 	public Body2D copy() {
-		return new Body2D(c, mass, radius, sx, sy, vx, vy);
+		return new Body2D(name, c, mass, radius, sx, sy, vx, vy);
 	}
 
 }
