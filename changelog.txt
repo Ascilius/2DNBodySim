@@ -1,7 +1,0 @@
-Changelog Version 3.6 (09-29-2023):
- - Changed Roche limit formula
-    - Optimized splitting
- - Removed trails - better system coming soon
- - Added rewind; pause and use the arrow keys to rewind
- - Optimized UI
- - Added pause indicator

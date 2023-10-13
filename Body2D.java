@@ -1,25 +1,30 @@
 import java.awt.Color;
-import java.util.ArrayList;
+import java.awt.Rectangle;
 
 public class Body2D {
 
-	final double G = 6.67408 * Math.pow(10, -11);
+	private final double G = 6.67408 * Math.pow(10, -11);
 
-	Color c = Color.WHITE;
-	double mass, radius;
+	// physical properties
+	private double mass, radius, diameter;
+	private double sx, sy; // m
+	private double vx, vy; // m/s
+	private double ax, ay; // m/s^2
 
-	double sx, sy; // m
-	double vx, vy; // m/s
-	double ax, ay; // m/s^2
+	// color
+	private Color c = Color.WHITE; // default color
+	private final double white_shift = 0.75; // prevents colors from blending into black
 
-	boolean locked;
+	// simulation
+	private boolean locked;
 	boolean toSplit = false;
-
+	// private Rectangle bounds;
 	private Trail trail = new Trail();
 
 	public Body2D(double mass, double radius, double sx, double sy, double vx, double vy) {
 		this.mass = mass;
 		this.radius = radius;
+		this.diameter = 2 * radius;
 		this.sx = sx;
 		this.sy = sy;
 		this.vx = vx;
@@ -32,6 +37,7 @@ public class Body2D {
 		this.c = c;
 		this.mass = mass;
 		this.radius = radius;
+		this.diameter = 2 * radius;
 		this.sx = sx;
 		this.sy = sy;
 		this.vx = vx;
@@ -66,7 +72,7 @@ public class Body2D {
 
 	// add a point to the trail (TODO)
 	public void addTrail(int trailLen) {
-		
+
 	}
 
 	public Body2D collision(Body2D otherBody) {
@@ -87,10 +93,25 @@ public class Body2D {
 			}
 			// blending color
 			else {
-				int newR = (this.c.getRed() + otherBody.getColor().getRed()) / 2;
-				int newG = (this.c.getGreen() + otherBody.getColor().getGreen()) / 2;
-				int newB = (this.c.getBlue() + otherBody.getColor().getBlue()) / 2;
-				newC = new Color(newR, newG, newB);
+				int r1 = c.getRed();
+				int g1 = c.getGreen();
+				int b1 = c.getBlue();
+				double m1 = mass;
+				int r2 = otherBody.getColor().getRed();
+				int g2 = otherBody.getColor().getGreen();
+				int b2 = otherBody.getColor().getBlue();
+				double m2 = otherBody.getMass();
+				double newR = (r1 * m1 + r2 * m2) / (m1 + m2);
+				double newG = (g1 * m1 + g2 * m2) / (m1 + m2);
+				double newB = (b1 * m1 + b2 * m2) / (m1 + m2);
+				// white shifting
+				if (newR <= 255 - white_shift)
+					newR += white_shift;
+				if (newG <= 255 - white_shift)
+					newG += white_shift;
+				if (newB <= 255 - white_shift)
+					newB += white_shift;
+				newC = new Color((int) newR, (int) newG, (int) newB);
 			}
 
 			// mass/volume conservation
@@ -130,17 +151,21 @@ public class Body2D {
 		}
 
 	}
-	
+
 	public void setColor(Color c) {
 		this.c = c;
 	}
-	
+
 	public Color getColor() {
 		return c;
 	}
 
 	public double getRadius() {
 		return radius;
+	}
+	
+	public double getDiameter() {
+		return diameter;
 	}
 
 	public double getMass() {
@@ -170,10 +195,16 @@ public class Body2D {
 	public double getAY() {
 		return ay;
 	}
+	
+	/*
+	public Rectangle getBounds() {
+		return bounds;
+	}
 
 	public Trail getTrail() {
 		return trail;
 	}
+	*/
 
 	public Body2D copy() {
 		return new Body2D(c, mass, radius, sx, sy, vx, vy);

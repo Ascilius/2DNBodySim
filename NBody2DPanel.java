@@ -1,4 +1,4 @@
-// Java 2D N-Body Simulation Version 3.6 by Jason Kim
+// Java 2D N-Body Simulation Version 3.6.1 by Jason Kim
 
 import java.awt.Color;
 import java.awt.Font;
@@ -30,29 +30,25 @@ public class NBody2DPanel extends JPanel {
 	private double screenScale = 1.0; // m per pixel
 	private final double targetFPS = 60.0;
 	private final double targetTime = 1000.0 / targetFPS; // ms
-	private long totalTime;
-	private long totalFrames;
-	private double currentFPS;
+	private long totalTime = 0;
+	private long totalFrames = 0;
+	private double currentFPS = 0.0;
 	private boolean text = true;
 	private boolean help = false;
-	// barycenter
-	private boolean barycenter = false;
-	private Rectangle baryBounds; // clickable bounds of the barycenter;
 
 	// camera
 	private double cameraX = 0.0;
 	private double cameraY = 0.0;
 	private Body2D selected = null;
+	private final double zoom_speed = 1.05; // how fast the screen zooms in/out
 
 	// inputs
-	private ArrayList<Integer> holdableKeys = new ArrayList<>();
 	private ArrayList<Integer> heldKeys = new ArrayList<>();
-	private boolean alt = false; // toggles alt mode
 	private Point click = null; // location of the last click
 
 	// simulation
 	private ArrayList<ArrayList<Body2D>> frames = new ArrayList<ArrayList<Body2D>>();
-	private int frame;
+	private int frame = -1;
 	private final int max_frames = 1000; // to prevent memory overuse
 	private boolean paused = false;
 	private boolean collisions = true;
@@ -61,7 +57,7 @@ public class NBody2DPanel extends JPanel {
 
 	// physics
 	private final double G = 6.6743 * Math.pow(10, -11); // m^3 kg^-1 s^-2
-	private int physicsMode;
+	private int physicsMode = -1;
 	// multithreading
 	private int n = Runtime.getRuntime().availableProcessors() - 1;
 	private int num, rem;
@@ -80,7 +76,16 @@ public class NBody2DPanel extends JPanel {
 	private int scenario = 2;
 	// body locator
 	ArrayList<Body2D> sortedBodies; // sorted bodies based on mass
-	Rectangle[] bodyBounds; // bounds for clickable areas to select bodies
+	Rectangle[] bodyBounds = {}; // bounds for clickable areas to select bodies
+	// barycenter
+	private boolean barycenter = false; // show/hide barycenter
+	private final int bary_radius = 5; // radius of the barycenter on the screen
+	private final int bary_width = 2 * bary_radius; // width of the barycenter
+	private double bx = 0.0; // actual coordinates
+	private double by = 0.0; // not screen coordinates
+	private Rectangle baryBounds = null; // clickable bounds of the barycenter;
+	private boolean barycenter_selected = false; // center camera on barycenter
+
 	// nothing
 	private int nothing = 0;
 	private int nothing_limit = 10;
@@ -92,14 +97,9 @@ public class NBody2DPanel extends JPanel {
 		this.screenHeight = (int) screenHeight;
 
 		// keyboard inputs
-		holdableKeys.add(KeyEvent.VK_W);
-		holdableKeys.add(KeyEvent.VK_A);
-		holdableKeys.add(KeyEvent.VK_S);
-		holdableKeys.add(KeyEvent.VK_D);
-		holdableKeys.add(KeyEvent.VK_SHIFT);
-		holdableKeys.add(KeyEvent.VK_CONTROL);
 		KeyHandler keyHandler = new KeyHandler();
 		addKeyListener(keyHandler);
+		setFocusTraversalKeysEnabled(false);
 		// mouse inputs
 		addMouseListener(new MouseHandler());
 		addMouseWheelListener(new MouseWheelHandler());
@@ -126,18 +126,71 @@ public class NBody2DPanel extends JPanel {
 		cameraX = 0.0;
 		cameraY = 0.0;
 		selected = null;
-		// trail
-		trailLen = 0;
+		// bodies
 		bodies.clear();
+		barycenter_selected = false;
 		// nothing
 		nothing_limit = 10;
 
-		// debug scenario
-		if (scenario == 0 && debug == true) {
-			screenScale = 5000000;
-			physicsMode = 2;
-			bodies.add(new Body2D(1.989 * Math.pow(10, 30), 696340000.0, 0.0, 0.0, 0.0, 0.0));
-			bodies.add(new Body2D(5.972 * Math.pow(10, 24), 10378140.0, screenScale * 500, 0, 0.0, 160000.0));
+		if (scenario == 0) {
+			// debug scenario
+			if (debug) {
+				screenScale = 5000000;
+				physicsMode = 2;
+				bodies.add(new Body2D(1.989 * Math.pow(10, 30), 696340000.0, 0.0, 0.0, 0.0, 0.0));
+				bodies.add(new Body2D(5.972 * Math.pow(10, 24), 10378140.0, screenScale * 500, 0, 0.0, 160000.0));
+			}
+			// colliding saturns
+			else {
+				// simulation
+				minMass = Math.pow(10, 22);
+				screenScale = 2500000;
+				physicsMode = 2;
+
+				// Saturn 1
+				double saturnM = 568 * Math.pow(10, 24);
+				double saturnR = 120536000.0 / 2;
+				double saturnSX = -500000000;
+				double saturnSY = -125000000;
+				double saturnVX = 10000;
+				double saturnVY = 0;
+				bodies.add(new Body2D(Color.WHITE, saturnM, saturnR, saturnSX, saturnSY, saturnVX, saturnVY));
+				// Rings
+				for (int i = 0; i < 500; i++) {
+					double mass = Math.pow(10, 10);
+					double radius = 1000.0;
+					double t = Math.random() * 2 * Math.PI;
+					double r = 75000000.0 * 2 + Math.random() * (137000000.0 - 75000000.0);
+					double sx = r * Math.cos(t);
+					double sy = r * Math.sin(t);
+					double v = Math.sqrt(G * saturnM / r);
+					double vx = v * Math.cos(t + Math.PI / 2);
+					double vy = v * Math.sin(t + Math.PI / 2);
+					bodies.add(new Body2D(mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+				}
+
+				// Saturn 2
+				saturnM = 568 * Math.pow(10, 24);
+				saturnR = 120536000.0 / 2;
+				saturnSX *= -1;
+				saturnSY *= -1;
+				saturnVX *= -1;
+				saturnVY = 0;
+				bodies.add(new Body2D(Color.WHITE, saturnM, saturnR, saturnSX, saturnSY, saturnVX, saturnVY));
+				// Rings
+				for (int i = 0; i < 500; i++) {
+					double mass = Math.pow(10, 10);
+					double radius = 1000.0;
+					double t = Math.random() * 2 * Math.PI;
+					double r = 75000000.0 * 2 + Math.random() * (137000000.0 - 75000000.0);
+					double sx = r * Math.cos(t);
+					double sy = r * Math.sin(t);
+					double v = Math.sqrt(G * saturnM / r);
+					double vx = v * Math.cos(t + Math.PI / 2);
+					double vy = v * Math.sin(t + Math.PI / 2);
+					bodies.add(new Body2D(mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
+				}
+			}
 		}
 
 		// lone planet
@@ -656,64 +709,17 @@ public class NBody2DPanel extends JPanel {
 			*/
 		}
 
-		// colliding saturns
-		else if (scenario == 0) {
-			// simulation
-			minMass = Math.pow(10, 22);
-			screenScale = 2500000;
-			physicsMode = 2;
-
-			// Saturn 1
-			double saturnM = 568 * Math.pow(10, 24);
-			double saturnR = 120536000.0 / 2;
-			double saturnSX = -500000000;
-			double saturnSY = -125000000;
-			double saturnVX = 10000;
-			double saturnVY = 0;
-			bodies.add(new Body2D(Color.WHITE, saturnM, saturnR, saturnSX, saturnSY, saturnVX, saturnVY));
-			// Rings
-			for (int i = 0; i < 500; i++) {
-				double mass = Math.pow(10, 10);
-				double radius = 1000.0;
-				double t = Math.random() * 2 * Math.PI;
-				double r = 75000000.0 * 2 + Math.random() * (137000000.0 - 75000000.0);
-				double sx = r * Math.cos(t);
-				double sy = r * Math.sin(t);
-				double v = Math.sqrt(G * saturnM / r);
-				double vx = v * Math.cos(t + Math.PI / 2);
-				double vy = v * Math.sin(t + Math.PI / 2);
-				bodies.add(new Body2D(mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
-			}
-
-			// Saturn 2
-			saturnM = 568 * Math.pow(10, 24);
-			saturnR = 120536000.0 / 2;
-			saturnSX *= -1;
-			saturnSY *= -1;
-			saturnVX *= -1;
-			saturnVY = 0;
-			bodies.add(new Body2D(Color.WHITE, saturnM, saturnR, saturnSX, saturnSY, saturnVX, saturnVY));
-			// Rings
-			for (int i = 0; i < 500; i++) {
-				double mass = Math.pow(10, 10);
-				double radius = 1000.0;
-				double t = Math.random() * 2 * Math.PI;
-				double r = 75000000.0 * 2 + Math.random() * (137000000.0 - 75000000.0);
-				double sx = r * Math.cos(t);
-				double sy = r * Math.sin(t);
-				double v = Math.sqrt(G * saturnM / r);
-				double vx = v * Math.cos(t + Math.PI / 2);
-				double vy = v * Math.sin(t + Math.PI / 2);
-				bodies.add(new Body2D(mass, radius, saturnSX + sx, saturnSY + sy, saturnVX + vx, saturnVY + vy));
-			}
-		}
 		// first frame
+		update_barycenter();
 		addFrame();
 	}
 
-	// converts actual coords to screen coords
-	public int convert(double dim, double shift) {
-		return (int) ((dim - shift) / screenScale);
+	// TOFIX: converts actual coords to screen coords
+	public int[] convert(double x, double y) {
+		int screenX = (int) ((x - cameraX) / screenScale) + (screenWidth / 2);
+		int screenY = (int) ((y - cameraY) / screenScale) * -1 + (screenHeight / 2);
+		int[] screen_coords = { screenX, screenY };
+		return screen_coords;
 	}
 
 	public void step(double deltaTime) {
@@ -751,11 +757,15 @@ public class NBody2DPanel extends JPanel {
 						if (newBody != null) {
 							if (selected == body || selected == otherBody)
 								selected = newBody;
+
 							// attaching old trails to new trail
+							/*
 							body.getTrail().attachTo(newBody.getTrail());
 							otherBody.getTrail().attachTo(newBody.getTrail());
 							newBody.getTrail().attachFrom(body.getTrail());
 							newBody.getTrail().attachFrom(otherBody.getTrail());
+							*/
+
 							// removing old bodies
 							bodies.remove(body);
 							bodies.remove(otherBody);
@@ -903,67 +913,13 @@ public class NBody2DPanel extends JPanel {
 		g.setColor(Color.BLACK);
 		g.fillRect(0, 0, screenWidth, screenHeight);
 
-		// moving origin to center of the screen (positive y is still downwards)
-		g.translate(screenWidth / 2, screenHeight / 2);
-
 		// drawing bodies
-		for (Body2D body : bodies) {
-			g.setColor(body.getColor());
-
-			// calculating coords relative to camera
-			int screenX = convert(body.getSX(), cameraX);
-			int screenY = convert(body.getSY(), cameraY);
-			int screenR = convert(body.getRadius(), 0);
-			if (screenR < 1)
-				screenR = 1;
-			g.fillOval(screenX - screenR, screenY * -1 - screenR, screenR * 2, screenR * 2);
-			if (body.getColor() == Color.BLACK) {
-				g.setColor(Color.WHITE);
-				g.drawOval(screenX - screenR, screenY * -1 - screenR, screenR * 2, screenR * 2);
-			}
-
-			// trails (TODO)
-
-			// debugging
-			if (debug == true) {
-				g.setColor(Color.RED);
-				// bounds
-				g.drawRect(screenX - screenR, screenY * -1 - screenR, screenR * 2, screenR * 2);
-				// center
-				screenX = convert(body.getSX(), cameraX);
-				screenY = convert(body.getSY(), cameraY);
-				screenR = 1;
-				g.drawOval(screenX - screenR, screenY * -1 - screenR, screenR * 2, screenR * 2);
-				// arrow
-				int x1 = screenX;
-				int y1 = screenY;
-				int x2 = (int) (x1 + (body.getVX() / screenScale * 10000));
-				int y2 = (int) (y1 + (body.getVY() / screenScale * 10000));
-				g.drawLine(x1, y1 * -1, x2, y2 * -1);
-			}
-		}
-		// barycenter
-		if (barycenter == true) {
-			double bx = 0;
-			double by = 0;
-			double m = 0;
-			for (Body2D body : bodies) {
-				bx += body.getMass() * body.getSX();
-				by += body.getMass() * body.getSY();
-				m += body.getMass();
-			}
-			bx /= m;
-			by /= m;
-			bx = convert(bx, cameraX);
-			by = convert(by, cameraY);
-			g.setColor(Color.WHITE);
-			g.drawLine((int) (bx - 5), (int) (by * -1), (int) (bx + 5), (int) (by * -1));
-			g.drawLine((int) (bx), (int) (by * -1 - 5), (int) (bx), (int) (by * -1 + 5));
-		}
+		draw_bodies(g);
 
 		// divvying up work between cores
 		num = bodies.size() / n;
 		rem = bodies.size() % n; // last core
+		// TOFIX: stepping bodies
 		if (!paused) {
 
 			// saving previous frame
@@ -1025,37 +981,11 @@ public class NBody2DPanel extends JPanel {
 				step(timeScale);
 			}
 		}
+		// updating barycenter
+		update_barycenter();
 
-		// camera
-		if (heldKeys.size() > 0) {
-			selected = null;
-			relative = false;
-			for (int key : heldKeys) {
-				if (key == KeyEvent.VK_W) {
-					cameraY += screenScale * 10;
-				} else if (key == KeyEvent.VK_A) {
-					cameraX -= screenScale * 10;
-				} else if (key == KeyEvent.VK_S) {
-					cameraY -= screenScale * 10;
-				} else if (key == KeyEvent.VK_D) {
-					cameraX += screenScale * 10;
-				}
-			}
-		}
-		if (selected != null) { // follows object
-			cameraX = selected.getSX();
-			cameraY = selected.getSY();
-		}
-
-		// aligning to top left corner
-		g.translate(screenWidth / -2, screenHeight / -2);
-
-		// pause border
-		if (paused && text)
-			drawPauseBorder(g);
-
-		// aligning to top left corner
-		g.translate(screenWidth / -2, screenHeight / -2);
+		// updating camera
+		update_camera();
 
 		// pause border
 		if (paused && text)
@@ -1109,6 +1039,126 @@ public class NBody2DPanel extends JPanel {
 		}
 	}
 
+	// drawing bodies (and barycenter)
+	public void draw_bodies(Graphics2D g) {
+		// bodies
+		for (Body2D body : bodies) {
+			g.setColor(body.getColor());
+
+			// calculating coords relative to camera
+			int[] screen_coords = convert(body.getSX(), body.getSY());
+			int screenX = screen_coords[0];
+			int screenY = screen_coords[1];
+			int screenR = (int) (body.getRadius() / screenScale);
+			if (screenR < 1)
+				screenR = 1;
+			g.fillOval(screenX - screenR, screenY - screenR, screenR * 2, screenR * 2);
+			if (body.getColor() == Color.BLACK) {
+				g.setColor(Color.WHITE);
+				g.drawOval(screenX - screenR, screenY - screenR, screenR * 2, screenR * 2);
+			}
+
+			// TODO: trails
+
+			// debugging
+			if (debug == true) {
+				g.setColor(Color.RED);
+				// bounds
+				g.drawRect(screenX - screenR, screenY - screenR, screenR * 2, screenR * 2);
+				// center
+				screen_coords = convert(body.getSX(), body.getSY());
+				screenX = screen_coords[0];
+				screenY = screen_coords[1];
+				screenR = 1;
+				g.drawOval(screenX - screenR, screenY - screenR, screenR * 2, screenR * 2);
+				// arrow
+				int x1 = screenX;
+				int y1 = screenY;
+				int x2 = (int) (x1 + (body.getVX() / screenScale * 10000));
+				int y2 = (int) (y1 - (body.getVY() / screenScale * 10000));
+				g.drawLine(x1, y1, x2, y2);
+			}
+		}
+		// barycenter
+		if (barycenter == true) {
+			int[] screen_coords = convert(bx, by);
+			int screenX = screen_coords[0];
+			int screenY = screen_coords[1];
+			g.setColor(Color.WHITE);
+			g.drawLine(screenX - bary_radius, screenY, screenX + bary_radius, screenY); // horizontal line
+			g.drawLine(screenX, screenY - bary_radius, screenX, screenY + bary_radius); // vertical line
+			// clickable bounds of barcenter
+			if (debug) {
+				screenX -= bary_radius;
+				screenY -= bary_radius;
+				g.setColor(Color.RED);
+				g.drawRect(screenX, screenY, bary_width, bary_width);
+			}
+		}
+	}
+
+	// updating barycenter
+	public void update_barycenter() {
+		double m = 0; // total mass of all bodies
+		for (Body2D body : bodies) {
+			bx += body.getMass() * body.getSX();
+			by += body.getMass() * body.getSY();
+			m += body.getMass();
+		}
+		bx /= m;
+		by /= m;
+		// updating bounds
+		int[] screen_coords = convert(bx, by);
+		int screenX = screen_coords[0] - bary_radius;
+		int screenY = screen_coords[1] - bary_radius;
+		baryBounds = new Rectangle(screenX, screenY, bary_width, bary_width);
+	}
+
+	// updating camera
+	public void update_camera() {
+		if (heldKeys.size() > 0) {
+			for (int key : heldKeys) {
+				// translating camera
+				if (key == KeyEvent.VK_W)
+					translate_camera(0, screenScale * 10);
+				else if (key == KeyEvent.VK_A)
+					translate_camera(screenScale * -10, 0);
+				else if (key == KeyEvent.VK_S)
+					translate_camera(0, screenScale * -10);
+				else if (key == KeyEvent.VK_D)
+					translate_camera(screenScale * 10, 0);
+				// zooming camera
+				else if (key == KeyEvent.VK_F)
+					scaleScreen(1 / zoom_speed);
+				else if (key == KeyEvent.VK_V)
+					scaleScreen(zoom_speed);
+			}
+		}
+		if (selected != null) { // follows object
+			cameraX = selected.getSX();
+			cameraY = selected.getSY();
+		}
+		if (barycenter_selected) { // follows barycenter
+			cameraX = bx;
+			cameraY = by;
+		}
+	}
+
+	// translating camera
+	public void translate_camera(double dx, double dy) {
+		// stop tracking objects
+		selected = null;
+		relative = false;
+		barycenter_selected = false;
+		// move camera
+		if (heldKeys.contains(KeyEvent.VK_SHIFT)) { // shift mode
+			dx *= 4; // magnifies shift
+			dy *= 4;
+		}
+		cameraX += dx;
+		cameraY += dy;
+	}
+
 	// drawing pause border
 	public void drawPauseBorder(Graphics2D g) {
 		// red bc its noticeable
@@ -1132,7 +1182,7 @@ public class NBody2DPanel extends JPanel {
 			g.setFont(new Font("Dialog", Font.PLAIN, 14)); // title font
 			g.drawString("2D N-Body Simulator", 10, 20); // program title
 			g.setFont(new Font("Dialog", Font.PLAIN, 10)); // subtitle font
-			g.drawString("v.3.6", 145, 20); // version
+			g.drawString("v.3.6.1", 145, 20); // version
 			g.drawString("by Jason Kim", 10, 35); // by me
 			g.setFont(new Font("Dialog", Font.PLAIN, 12)); // regular font
 			if (help) {
@@ -1143,7 +1193,7 @@ public class NBody2DPanel extends JPanel {
 				menu.add("Esc - Exit");
 				menu.add("F3 - Debug Mode");
 				menu.add("F2 - Screenshot Mode");
-				menu.add("F1 - Literally does nothing");
+				menu.add("F1 - Does \"nothing\"");
 				menu.add("");
 				menu.add("Current Location: (" + round(cameraX, 1) + ", " + round(cameraY, 1) + ")");
 				menu.add("WASD - Move camera");
@@ -1159,6 +1209,8 @@ public class NBody2DPanel extends JPanel {
 				if (paused)
 					menu.add("Left Arrow - Rewind");
 				menu.add("");
+				if (barycenter_selected)
+					menu.add("Barycenter Selected");
 				if (barycenter)
 					menu.add("B - Hide Barycenter");
 				else
@@ -1232,19 +1284,26 @@ public class NBody2DPanel extends JPanel {
 			menu.add("Fast Mode:");
 			menu.add("Time Scale: " + round(timeScale, 5) + " seconds per frame");
 			menu.add("");
-			menu.add("Barycenter: " + barycenter);
 			menu.add("Collisions: " + collisions);
 			menu.add("Tidal Forces: " + tidalForces);
 			menu.add("");
 			menu.add("Minimum Mass: " + minMass);
 			menu.add("# of Bodies: " + bodies.size());
-			menu.add("Trail Length: " + trailLen);
+			menu.add("");
+			menu.add("Barycenter: " + barycenter);
+			menu.add("bary_radius: " + bary_radius);
+			menu.add("bary_width: " + bary_width);
+			menu.add("barycenter_selected: " + barycenter_selected);
+			menu.add("bx: " + bx);
+			menu.add("by: " + by);
 			menu.add("");
 			menu.add("Meters/Pixel: " + screenScale);
 			menu.add("Current Location: (" + round(cameraX, 1) + ", " + round(cameraY, 1) + ")");
 			menu.add("");
 			menu.add("Held Keys: " + heldKeys.toString());
-			menu.add("Alt: " + alt);
+			menu.add("shift: " + heldKeys.contains(KeyEvent.VK_SHIFT));
+			menu.add("ctrl: " + heldKeys.contains(KeyEvent.VK_CONTROL));
+			menu.add("alt: " + heldKeys.contains(KeyEvent.VK_ALT));
 			if (click != null) {
 				menu.add("");
 				menu.add("Last Click: " + "(" + click.getX() + ", " + click.getY() + "), (" + (click.getX() * screenScale) + ", " + (click.getY() * screenScale) + ")");
@@ -1324,15 +1383,27 @@ public class NBody2DPanel extends JPanel {
 	public double round(double value, int figs) { // figs: number of places after decimal point
 		return Math.round(value * Math.pow(10, figs)) / Math.pow(10, figs);
 	}
-
+	
+	// pauses the simulation
+	public void pause() {
+		paused = true;
+	}
+	
 	// scale time by x
 	public void scaleTime(double x) {
-		timeMult *= x;
-		timeScale *= x;
-		if (timeMult < 1) {
-			timeMult = 1;
+		if (heldKeys.contains(KeyEvent.VK_SHIFT)) // shift mode
+			x *= x; // magnifies shift
+		if (timeScale * x >= 1) { // no sub-second time speeds
+			timeMult *= x;
 			timeScale *= x;
 		}
+	}
+
+	// zooming camera; adjusting screenScale
+	public void scaleScreen(double x) {
+		if (heldKeys.contains(KeyEvent.VK_SHIFT)) // shift mode
+			x *= Math.pow(x, 4); // magnifies shift
+		screenScale *= x;
 	}
 
 	// nothing to see here
@@ -1343,26 +1414,25 @@ public class NBody2DPanel extends JPanel {
 		for (Body2D body : bodies)
 			body.setColor(random_color());
 	}
-
+	
+	// generates random color
 	public Color random_color() {
 		return new Color((int) (Math.random() * 255), (int) (Math.random() * 255), (int) (Math.random() * 255));
 	}
-
+	
+	// clears held keys
+	public void clear_held_keys() {
+		heldKeys.clear();
+	}
+	
 	class KeyHandler extends KeyAdapter {
 
 		public void keyPressed(KeyEvent e) {
-			/*
-			System.out.println(e);
-			System.out.println(e.getSource());
-			System.out.println(e.getID());
-			System.out.println(e.getWhen());
-			// System.out.println(e.getModifiers());
-			System.out.println(e.getModifiersEx());
-			System.out.println(e.getKeyCode());
-			System.out.println(e.getKeyChar());
-			System.out.println();
-			*/
 			int keyCode = e.getKeyCode();
+
+			// general key input
+			if (!heldKeys.contains(keyCode))
+				heldKeys.add(keyCode);
 
 			// time
 			if (e.getKeyCode() == KeyEvent.VK_PERIOD) {
@@ -1385,20 +1455,6 @@ public class NBody2DPanel extends JPanel {
 				}
 			}
 
-			// scale
-			if (keyCode == KeyEvent.VK_SHIFT) {
-				screenScale /= 2;
-			} else if (keyCode == KeyEvent.VK_CONTROL) {
-				screenScale *= 2;
-			}
-
-			// movement
-			else if (holdableKeys.contains(keyCode) && !heldKeys.contains(keyCode)) {
-				heldKeys.add(keyCode);
-			} else if (keyCode == KeyEvent.VK_ALT) {
-				alt = true;
-			}
-
 			// trail
 			else if (keyCode == KeyEvent.VK_Z) {
 				trailLen++;
@@ -1415,63 +1471,24 @@ public class NBody2DPanel extends JPanel {
 		public void keyReleased(KeyEvent e) {
 			int keyCode = e.getKeyCode();
 
-			// scenarios
-			if (alt == false) {
-				if (keyCode == KeyEvent.VK_0) {
-					scenario = 0;
-					reset();
-				} else if (keyCode == KeyEvent.VK_1) {
-					scenario = 1;
-					reset();
-				} else if (keyCode == KeyEvent.VK_2) {
-					scenario = 2;
-					reset();
-				} else if (keyCode == KeyEvent.VK_3) {
-					scenario = 3;
-					reset();
-				} else if (keyCode == KeyEvent.VK_4) {
-					scenario = 4;
-					reset();
-				} else if (keyCode == KeyEvent.VK_5) {
-					scenario = 5;
-					reset();
-				} else if (keyCode == KeyEvent.VK_6) {
-					scenario = 6;
-					reset();
-				} else if (keyCode == KeyEvent.VK_7) {
-					scenario = 7;
-					reset();
-				} else if (keyCode == KeyEvent.VK_8) {
-					scenario = 8;
-					reset();
-				} else if (keyCode == KeyEvent.VK_9) {
-					scenario = 9;
-					reset();
-				}
-			}
-
-			// physics
+			// TOFIX: alt+tab fix
 			/*
-			if (keyCode == KeyEvent.VK_H) {
-				n++;
-				minMass *= 10;
-			} else if (keyCode == KeyEvent.VK_N) {
-				n--;
-				if (n < 1)
-					n = 1;
-				minMass /= 10;
+			if (keyCode == KeyEvent.VK_TAB) {
+				int i = heldKeys.indexOf(KeyEvent.VK_ALT);
+				if (i != -1)
+					heldKeys.remove(i);
 			}
 			*/
-			if (alt == true && keyCode == KeyEvent.VK_0) { // physics mode 0
-				physicsMode = 0;
-			} else if (alt == true && keyCode == KeyEvent.VK_1) { // physics mode 1
-				physicsMode = 1;
-			} else if (alt == true && keyCode == KeyEvent.VK_2) { // physics mode 2
-				physicsMode = 2;
-			}
+
+			// removing held key
+			int i = heldKeys.indexOf(keyCode);
+			if (i != -1)
+				heldKeys.remove(i);
+
+			// regardless of alt
 
 			// sim
-			else if (keyCode == KeyEvent.VK_SPACE) { // pause
+			if (keyCode == KeyEvent.VK_SPACE) { // pause
 				paused = !paused;
 				if (paused == false) // if the user rewinded and unpaused, future frames are deleted
 					while (frame < frames.size() - 1)
@@ -1480,28 +1497,39 @@ public class NBody2DPanel extends JPanel {
 				reset();
 			} else if (keyCode == KeyEvent.VK_ESCAPE) { // exit
 				System.exit(0);
-			} else if (keyCode == KeyEvent.VK_B) { // barycenter
+			} else if (keyCode == KeyEvent.VK_B) // barycenter
 				barycenter = !barycenter;
-			}
 
 			// ui
 			else if (text && !debug && keyCode == KeyEvent.VK_H) { // help view
 				help = !help;
-			} else if (keyCode == KeyEvent.VK_F1) { // this does nothing
+			} else if (keyCode == KeyEvent.VK_F1) { // does nothing
 				nothing++;
 				if (nothing == nothing_limit)
 					doNothing();
 			} else if (keyCode == KeyEvent.VK_F2) { // ui view
 				text = !text;
-			} else if (text && keyCode == KeyEvent.VK_F3) { // debug
+			} else if (keyCode == KeyEvent.VK_F3) { // debug
 				debug = !debug;
 			}
 
-			// movement
-			else if (holdableKeys.contains(keyCode) && heldKeys.contains(keyCode)) {
-				heldKeys.remove((Integer) keyCode);
-			} else if (keyCode == KeyEvent.VK_ALT) {
-				alt = false;
+			// alt mode
+			else if (heldKeys.contains(KeyEvent.VK_ALT)) {
+				// physics
+				if (keyCode == KeyEvent.VK_0) // physics mode 0
+					physicsMode = 0;
+				else if (keyCode == KeyEvent.VK_1) // physics mode 1
+					physicsMode = 1;
+				else if (keyCode == KeyEvent.VK_2) // physics mode 2
+					physicsMode = 2;
+			}
+			// not alt mode
+			else {
+				// scenarios
+				if (48 <= keyCode && keyCode <= 57) {
+					scenario = keyCode - 48;
+					reset();
+				}
 			}
 		}
 	}
@@ -1513,20 +1541,23 @@ public class NBody2DPanel extends JPanel {
 
 			// converting coords
 			click = e.getLocationOnScreen();
-			int newX = (int) (click.getX() - screenWidth / 2);
-			int newY = (int) (click.getY() - screenHeight / 2) * -1;
-			Point centered_click = new Point(newX, newY);
 
 			// selecting bodies
 			selected = null;
+			barycenter_selected = false;
 			for (Body2D body : bodies) {
 				// calculating bounds
-				int boundsX = convert(body.getSX(), cameraX);
-				int boundsY = convert(body.getSY(), cameraY);
-				int boundsR = convert(body.getRadius(), 0);
+				int[] screen_coords = convert(body.getSX(), body.getSY());
+				int boundsX = screen_coords[0];
+				int boundsY = screen_coords[1];
+				if (debug) {
+					System.out.println("Debug: boundsX: " + boundsX);
+					System.out.println("Debug: boundsY: " + boundsY + "\n");
+				}
+				int boundsR = (int) (body.getRadius() / screenScale);
 				Rectangle bounds = new Rectangle(boundsX - boundsR, boundsY - boundsR, boundsR * 2, boundsR * 2);
 				// checking
-				if (bounds.contains(centered_click)) {
+				if (bounds.contains(click)) {
 					// splitting bodies (debug only)
 					if (debug == true && e.getButton() == MouseEvent.BUTTON3) { // right click
 						splitBody(body);
@@ -1537,6 +1568,9 @@ public class NBody2DPanel extends JPanel {
 					}
 				}
 			}
+			// selecting barycenter
+			if (selected == null && baryBounds.contains(click))
+				barycenter_selected = true;
 
 			// body locator
 			if (text) { // only available if text is visible
@@ -1556,13 +1590,11 @@ public class NBody2DPanel extends JPanel {
 
 		public void mouseWheelMoved(MouseWheelEvent e) {
 			// zoom in
-			if (e.getWheelRotation() > 0) {
-				screenScale *= 2;
-			}
+			if (e.getWheelRotation() > 0)
+				scaleScreen(1.5 * zoom_speed);
 			// zoom out
-			else if (e.getWheelRotation() < 0) {
-				screenScale /= 2;
-			}
+			else if (e.getWheelRotation() < 0)
+				scaleScreen(1 / (1.5 * zoom_speed));
 		}
 
 	}
