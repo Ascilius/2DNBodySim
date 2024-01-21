@@ -1,24 +1,39 @@
 To-Do:
- - new object: Simulation
- - save/load scenarios
-    - Added scenario loading/saving system
-    - Scenarios are now located in json files
-    - Custom scenarios can be created from json files
-    - Users can use CTRL+S to save a screenshot of the current state of the simulation
-    - CTRL-Z saves the state of the simulation from 10 real-world seconds ago
-    - CTRL-L opens a file explorer, where json files that contain scenarios can be selected
+
+New multi-window/simulation system
+ - split panel stuff into separate classes
  - Users can now run multiple simulations in a single session
     - CTRL-N creates a new simulation
     - Use [ and ] to switch between simulations
     - Press [ and ] at the same time to open two simulations at once
        - Select a window with the mouse to change which window you switch
- - efficiency
- 	- organize functions
-    - optimizations
-    - sphere of influence
-    - multithreading
- - improve rewind feature
-    - dont generate new object for every frame
+ - Window
+ - Simulation
+    - 
+ - Manager
+    - manages windows and sims
+    - closes program when theres no more windows or sims
+       - or starts a new sim automatically when the last sim is closed?
+
+Save/load scenarios
+ - Added scenario loading/saving system
+ - Scenarios are now located in json files
+ - Custom scenarios can be created from json files
+ - Users can use CTRL+S to save a screenshot of the current state of the simulation
+ - CTRL-Z saves the state of the simulation from 10 real-world seconds ago
+ - CTRL-L opens a file explorer, where json files that contain scenarios can be selected
+
+Efficiency
+ - organize functions
+ - optimizations
+ - sphere of influence
+ - multithreading
+
+Improve rewind feature / history
+ - dont generate new object for every frame
+ - output history file
+    - make new player?
+
  - trail overhaul
     - t-stamp
     - 

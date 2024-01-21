@@ -1,5 +1,12 @@
 # 2DNBodySim
-A personal project I work on in my "spare" time.
+A personal project I work on in my spare time.
+
+### Version 4.0.0 (2024-01-)
+ - renamed Body2D to Body
+ - 
+
+### Version 3.6.2
+ - restored names
 
 ### Version 3.6.1 (2023-10-13)
  - restored text drawing
