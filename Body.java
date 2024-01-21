@@ -2,7 +2,8 @@ import java.awt.Color;
 import java.awt.Rectangle;
 
 public class Body {
-
+	
+	// constants
 	private final double G = 6.67408 * Math.pow(10, -11);
 
 	// physical properties
@@ -19,7 +20,7 @@ public class Body {
 	private boolean locked;
 	boolean toSplit = false;
 	// private Rectangle bounds;
-	private Trail trail = new Trail();
+	// private Trail trail = new Trail();
 
 	public Body(double mass, double radius, double sx, double sy, double vx, double vy) {
 		this.mass = mass;
@@ -47,14 +48,14 @@ public class Body {
 		// this.locked = locked;
 	}
 
-	public void move(Body otherBody, double timeStep) {
+	public void move(Body otherBody, double timeStep, double S) {
 		// getting distances
 		double x = otherBody.getSX() - this.sx;
 		double y = otherBody.getSY() - this.sy;
 		double z = Math.sqrt(x * x + y * y);
 
 		// calculating acceleration
-		double F = G * ((mass * otherBody.getMass()) / Math.pow(z, 2));
+		double F = G * ((mass * otherBody.getMass()) / soften(z, S));
 		double a = F / mass;
 
 		// vectors
@@ -62,6 +63,11 @@ public class Body {
 		ay = a * y / z;
 		vx += ax * timeStep;
 		vy += ay * timeStep;
+	}
+	
+	// softening (rather than r^2)
+	private double soften(double z, double S) { 
+		return Math.pow(z, 2) + Math.pow(S, 2);
 	}
 
 	public void actuallyMove(double timeStep) {
@@ -134,10 +140,12 @@ public class Body {
 
 			// creating new body
 			Body newBody = new Body(newC, newMass, newRadius, newSX, newSY, newVX, newVY);
+			/*
 			if (this.mass > otherBody.getMass())
 				newBody.trail = this.trail;
 			else
 				newBody.trail = otherBody.trail;
+			*/
 
 			// debugging
 			// System.out.println("Debug: " + this.toString() + " colliding with " + otherBody.toString() + " to create " + newBody.toString());
@@ -152,62 +160,32 @@ public class Body {
 
 	}
 
-	public void setColor(Color c) {
-		this.c = c;
-	}
-
-	public Color getColor() {
-		return c;
-	}
-
-	public double getRadius() {
-		return radius;
-	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	// set/get methods
 	
-	public double getDiameter() {
-		return diameter;
-	}
+	public void setColor(Color c) {this.c = c;}
+	public Color getColor() {return c;}
 
-	public double getMass() {
-		return mass;
-	}
+	public double getRadius() {return radius;}
+	public double getDiameter() {return diameter;}
 
-	public double getSX() {
-		return sx;
-	}
+	public double getMass() {return mass;}
 
-	public double getSY() {
-		return sy;
-	}
-
-	public double getVX() {
-		return vx;
-	}
-
-	public double getVY() {
-		return vy;
-	}
-
-	public double getAX() {
-		return ax;
-	}
-
-	public double getAY() {
-		return ay;
-	}
+	public double getSX() {return sx;}
+	public double getSY() {return sy;}
+	
+	public double getVX() {return vx;}
+	public double getVY() {return vy;}
+	
+	public double getAX() {return ax;}
+	public double getAY() {return ay;}
 	
 	/*
-	public Rectangle getBounds() {
-		return bounds;
-	}
-
-	public Trail getTrail() {
-		return trail;
-	}
+	public Rectangle getBounds() {return bounds;}
+	
+	public Trail getTrail() {return trail;}
 	*/
 
-	public Body copy() {
-		return new Body(c, mass, radius, sx, sy, vx, vy);
-	}
+	public Body copy() {return new Body(c, mass, radius, sx, sy, vx, vy);}
 
 }

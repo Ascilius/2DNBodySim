@@ -2,8 +2,14 @@
 A personal project I work on in my spare time.
 
 ### Version 4.0.0 (2024-01-)
+Code Organization
  - renamed Body2D to Body
- - 
+ - renamed NBody2DDriver to NBody2D
+    - added Manager class which manages Windows and Simulations
+ - renamed NBody2DPanel to Window
+    - all graphics/input code kept here
+ - added Simulation
+    - all physics-related code moved here
 
 ### Version 3.6.2
  - restored names

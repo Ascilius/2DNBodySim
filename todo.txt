@@ -8,12 +8,33 @@ New multi-window/simulation system
     - Press [ and ] at the same time to open two simulations at once
        - Select a window with the mouse to change which window you switch
  - Window
+    - JPanel
+    - manages frames and graphics stuff (painting)
+    - contains Simulation that can be switched out
+    - mouse and keyboard listeners
  - Simulation
-    - 
+    - manages bodies
+       - stepping
+       - collisions
+       - scenarios
  - Manager
     - manages windows and sims
     - closes program when theres no more windows or sims
        - or starts a new sim automatically when the last sim is closed?
+
+Bugs
+ - zooming with window to the side
+ - selecting objects are now broken bc of top bar
+ - quitting one window quits all windows / stops the program
+ - camera offset slightly on selected bodies
+
+Optimizations
+ - organize functions
+    - Timer
+    - Inputs
+ - multithreading
+ - fps-independent simulation
+ - better selection management
 
 Save/load scenarios
  - Added scenario loading/saving system
@@ -23,12 +44,6 @@ Save/load scenarios
  - CTRL-Z saves the state of the simulation from 10 real-world seconds ago
  - CTRL-L opens a file explorer, where json files that contain scenarios can be selected
 
-Efficiency
- - organize functions
- - optimizations
- - sphere of influence
- - multithreading
-
 Improve rewind feature / history
  - dont generate new object for every frame
  - output history file
@@ -36,7 +51,6 @@ Improve rewind feature / history
 
  - trail overhaul
     - t-stamp
-    - 
  - roche limit
     - variable minMass
  - hill radius
@@ -56,3 +70,9 @@ Improve rewind feature / history
     - optimize sorting algo
  - detect display fps
  - disable tidal forces when collisions are disabled
+ 
+ Checklist:
+ 1. Update version number
+  - NBody2DPanel
+  - In-game (simulation)
+ 2. Update README.md
