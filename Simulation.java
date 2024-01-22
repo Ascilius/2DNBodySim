@@ -38,7 +38,7 @@ public class Simulation {
 	private double by = 0.0; // not screen coordinates
 	private Rectangle baryBounds = null; // clickable bounds of the barycenter;
 
-	// TOREMOVE
+	// TOFIX
 	/*
 	// nothing
 	private int nothing = 0;
@@ -63,7 +63,7 @@ public class Simulation {
 		tidalForces = true;
 		// bodies
 		bodies.clear();
-		// TOREMOVE: nothing
+		// TOFIX: nothing
 		// nothing_limit = 10;
 
 		if (scenario == 0) {
@@ -856,7 +856,7 @@ public class Simulation {
 		parentWindow.updateBaryBounds();
 	}
 	
-	// TOREMOVE: i dont want to be sued
+	// TOFIX
 	/*
 	// nothing to see here
 	public void doNothing() {

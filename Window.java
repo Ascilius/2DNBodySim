@@ -802,7 +802,7 @@ public class Window extends JPanel {
 				help = !help;
 			}
 			
-			// TOREMOVE
+			// TOFIX
 			/*
 			else if (keyCode == KeyEvent.VK_F1) { // does nothing
 				nothing++;
