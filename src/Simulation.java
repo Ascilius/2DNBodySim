@@ -678,13 +678,13 @@ public class Simulation {
 		updateBarycenter();
 	}
 	
-	// collision detection
+	// collision detection (TOFIX: optimize)
 	public void colCheck() {
 		// checking if collisions are turned on
 		if (collisions == true) {
 			// actual collision stuff
 			boolean pass = false;
-			while (pass == false) {
+			while (pass == false) { // sometimes merged bodies can collide with even more bodies
 				pass = true;
 				for (int i = 0; i < bodies.size(); i++) {
 					Body body = bodies.get(i);
@@ -725,17 +725,22 @@ public class Simulation {
 			double v = (4 / 3.0) * Math.PI * Math.pow(body.getRadius(), 3); // volume
 			double nr = Math.pow((3 / 4.0) * (v / 4) / Math.PI, 1 / 3.0); // radius
 			double nm = body.getMass() / 4; // mass
+			
 			// original body's location
 			double sx = body.getSX();
 			double sy = body.getSY();
+			
 			// random rotation
 			double rr = Math.random() * Math.PI / 2; // in radians
+			
 			// splits into four bodies
 			for (int i = -1; i <= 1; i += 2) {
 				for (int j = -1; j <= 1; j += 2) {
+					
 					// 2x2 square shape
 					double nx = sx + (body.getRadius() - nr / 2) * i; // new x coordinate
 					double ny = sy + (body.getRadius() - nr / 2) * j; // new y coordinate
+					
 					// convert to polar and rotate randomly
 					double dx = nx - sx; // difference between new split body and original body
 					double dy = ny - sy;
@@ -744,6 +749,7 @@ public class Simulation {
 					if (dy < 0)
 						t *= -1;
 					t += rr; // random rotation
+					
 					// converting back to cartesian coordinates
 					nx = dr * Math.cos(t) + sx;
 					ny = dr * Math.sin(t) + sy;
@@ -755,6 +761,7 @@ public class Simulation {
 				parentWindow.setSelected(newSelected);
 			}
 			bodies.remove(body);
+			
 			// paused = true; // used for debugging
 			return true; // body was split
 		}

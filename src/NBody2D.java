@@ -26,7 +26,7 @@ public class NBody2D {
 class Manager {
 	
 	// debugging
-	private final boolean debug = false;
+	private final boolean debug = true;
 	
 	// computer specifications
 	private double screenWidth, screenHeight;
@@ -80,26 +80,16 @@ class Manager {
 	}
 	
 	// reassigns a window with a different simulation
-	public void reassignSim(Window window, int di) {
-		// finding current sim
-		int curr_i = 0;
-		int size = sims.size();
-		for (int i = 0; i < size; ++i) { 
-			if (sims.get(i) == sims.get(curr_i)) {
-				curr_i = i;
-				break;
-			}
-		}
-		
+	public void reassignSim(Window window, int curr_i, int di) {
 		// incrementing index
 		curr_i += di;
 		if (curr_i < 0)
 			curr_i = sims.size() - 1;
-		if (curr_i >= sims.size())
+		else if (curr_i >= sims.size())
 			curr_i = 0;
 		
 		// reassigning
-		window.assignSim(sims.get(curr_i));
+		window.assignSim(sims.get(curr_i), curr_i);
 	}
 	
 }

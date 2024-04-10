@@ -35,6 +35,7 @@ Optimizations
  - multithreading
  - fps-independent simulation
  - better selection management
+ - sim assignment and management
 
 Save/load scenarios
  - Added scenario loading/saving system

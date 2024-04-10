@@ -54,7 +54,8 @@ public class Window extends JPanel {
 	
 	// simulation management
 	private Manager manager;
-	private Simulation sim; // TOFIX: non-private for easy access by manager
+	private Simulation sim;
+	private int sim_i; // index of current sim within manager
 	
 	// TOFIX: simulation
 	private boolean paused = false;
@@ -94,7 +95,7 @@ public class Window extends JPanel {
 		// assigning manager
 		this.manager = manager;
 		
-		// creating new sim
+		// TOFIX: creating new sim
 		sim = new Simulation(this);
 		manager.addSim(sim);
 		
@@ -105,13 +106,14 @@ public class Window extends JPanel {
 	}
 	
 	// assigns a new sim to this window
-	public void assignSim(Simulation newSim) {
+	public void assignSim(Simulation newSim, int new_i) {
 		sim = newSim;
+		sim_i = new_i;
 		sim.assignWindow(this);
 	}
 	
-	// have a new sim assigned to this window
-	public void switchSim(int di) {manager.reassignSim(this, di);}
+	// request a new sim assigned to this window
+	public void requestSim(int di) {manager.reassignSim(this, sim_i, di);}
 	
 	// reset both window and simulation
 	public void reset() {
@@ -537,6 +539,7 @@ public class Window extends JPanel {
 			menu.add("");
 			menu.add("Window: " + this);
 			menu.add("Simulation: " + sim);
+			menu.add("sim_i: " + sim_i);
 			menu.add("");
 			menu.add("Screen: " + screenWidth + " x " + screenHeight);
 			menu.add("Screen Scale: " + screenScale + " m/pixel");
@@ -779,9 +782,9 @@ public class Window extends JPanel {
 
 			// sim
 			if (keyCode == KeyEvent.VK_OPEN_BRACKET) { // switching sims
-				switchSim(-1);
+				requestSim(-1);
 			} else if (keyCode == KeyEvent.VK_CLOSE_BRACKET) {
-				switchSim(1);
+				requestSim(1);
 			} else if (keyCode == KeyEvent.VK_SPACE) { // pause
 				paused = !paused;
 				// TOFIX: rewinding stuff
