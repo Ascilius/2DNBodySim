@@ -1,5 +1,24 @@
+Checklist:
+ - help menu
+ - version
+    - panel
+    - title
+ - readme
+ - .jar file
+
 To-Do:
  - new object: Simulation
+ - colored gravitational potential
+ - detect display fps
+
+ - rewind system
+    - move back with pause and arrowkeys
+    - overwrite future
+    - memory limit
+    - improve rewind feature
+       - dont generate new object for every frame
+ - trail overhaul
+
  - save/load scenarios
     - Added scenario loading/saving system
     - Scenarios are now located in json files
@@ -12,32 +31,23 @@ To-Do:
     - Use [ and ] to switch between simulations
     - Press [ and ] at the same time to open two simulations at once
        - Select a window with the mouse to change which window you switch
- - efficiency
+
+ - placing bodies
+
+ - optimizations
  	- organize functions
     - optimizations
     - sphere of influence
     - multithreading
- - improve rewind feature
-    - dont generate new object for every frame
- - trail overhaul
-    - t-stamp
-    - 
- - roche limit
-    - variable minMass
+    - body constructors
+    - optimize collisions
+ 	   - dont create an entirely new object; just update the larger of the two
+ 
+
  - hill radius
- - gui
-    - TOFIX: bodies can still be selected from hidden gui
- - colored gravitational field
- - rewind system
-    - move back with pause and arrowkeys
-    - overwrite future
-    - memory limit
- - better collisions
- - view orbit
- - rotation
- - body placement
- - key input overhaul
  - body locator
     - optimize sorting algo
- - detect display fps
- - disable tidal forces when collisions are disabled
+
+ - view orbit
+ - rotation
+ - key input overhaul

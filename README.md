@@ -1,5 +1,8 @@
 # 2DNBodySim
-A personal project I work on in my "spare" time.
+A personal project I work on in my spare time.
+
+### Version 3.6.2
+ - restored names
 
 ### Version 3.7 (2024-04-10)
  - fixed file structure
